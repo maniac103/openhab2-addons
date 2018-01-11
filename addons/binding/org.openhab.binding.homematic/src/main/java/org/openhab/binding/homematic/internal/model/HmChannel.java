@@ -34,18 +34,16 @@ public class HmChannel {
     private boolean initialized;
     private Map<HmDatapointInfo, HmDatapoint> datapoints = new HashMap<HmDatapointInfo, HmDatapoint>();
 
+    public HmChannel(String type, Integer number) {
+        this.type = type;
+        this.number = number;
+    }
+
     /**
      * Returns the channel number.
      */
     public Integer getNumber() {
         return number;
-    }
-
-    /**
-     * Sets the channel number.
-     */
-    public void setNumber(Integer number) {
-        this.number = number;
     }
 
     /**
@@ -67,13 +65,6 @@ public class HmChannel {
      */
     public String getType() {
         return type;
-    }
-
-    /**
-     * Returns the type of the channel.
-     */
-    public void setType(String type) {
-        this.type = type;
     }
 
     /**

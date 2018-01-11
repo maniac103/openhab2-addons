@@ -38,6 +38,16 @@ public class HmDevice {
 
     private List<HmChannel> channels = new ArrayList<HmChannel>();
 
+    public HmDevice(String address, HmInterface hmInterface, String type, String gatewayId, String homegearId,
+            String firmware) {
+        this.address = address;
+        this.hmInterface = hmInterface;
+        this.type = type;
+        this.gatewayId = gatewayId;
+        this.homegearId = homegearId;
+        this.firmware = firmware;
+    }
+
     /**
      * Returns the address of the device.
      */
@@ -46,24 +56,10 @@ public class HmDevice {
     }
 
     /**
-     * Sets the address of the device.
-     */
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    /**
      * Returns the interface of the device.
      */
     public HmInterface getHmInterface() {
         return hmInterface;
-    }
-
-    /**
-     * Sets the interface of the device.
-     */
-    public void setHmInterface(HmInterface hmInterface) {
-        this.hmInterface = hmInterface;
     }
 
     /**
@@ -88,13 +84,6 @@ public class HmDevice {
     }
 
     /**
-     * Sets the type of the device.
-     */
-    public void setType(String type) {
-        this.type = MiscUtils.validateCharacters(type, "Device type", "-");
-    }
-
-    /**
      * Returns all channels of the device.
      */
     public List<HmChannel> getChannels() {
@@ -109,13 +98,6 @@ public class HmDevice {
     }
 
     /**
-     * Sets the firmware of the device.
-     */
-    public void setFirmware(String firmware) {
-        this.firmware = firmware;
-    }
-
-    /**
      * Returns the gatewayId of the device.
      */
     public String getGatewayId() {
@@ -123,24 +105,10 @@ public class HmDevice {
     }
 
     /**
-     * Sets the gatewayId of the device.
-     */
-    public void setGatewayId(String gatewayId) {
-        this.gatewayId = gatewayId;
-    }
-
-    /**
      * Returns the homegearId of the device.
      */
     public String getHomegearId() {
         return homegearId;
-    }
-
-    /**
-     * Sets the homegearId of the device.
-     */
-    public void setHomegearId(String homegearId) {
-        this.homegearId = homegearId;
     }
 
     /**
