@@ -9,6 +9,7 @@
 package org.openhab.binding.homematic.internal.model;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -33,6 +34,7 @@ public class HmChannel {
     private String type;
     private HmDevice device;
     private boolean initialized;
+    private Integer lastFunction;
     private Map<HmDatapointInfo, HmDatapoint> datapoints = new HashMap<HmDatapointInfo, HmDatapoint>();
 
     public HmChannel(String type, Integer number) {
@@ -140,6 +142,39 @@ public class HmChannel {
      */
     public boolean isReconfigurable() {
         return getDatapoint(HmParamsetType.MASTER, HomematicConstants.DATAPOINT_NAME_CHANNEL_FUNCTION) != null;
+    }
+
+    public Integer getCurrentFunction() {
+        HmDatapoint functionDp = getDatapoint(HmParamsetType.MASTER,
+                HomematicConstants.DATAPOINT_NAME_CHANNEL_FUNCTION);
+        return functionDp == null ? null : (Integer) functionDp.getValue();
+    }
+
+    public boolean hasChannelFunctionChanged() {
+        Integer currentFunction = getCurrentFunction();
+        if (currentFunction == null) {
+            return false;
+        }
+        if (lastFunction == null) {
+            // We were called from initialization, which was preceded by initial metadata fetch, so everything
+            // should be fine by now
+            lastFunction = currentFunction;
+            return false;
+        }
+        if (lastFunction.equals(currentFunction)) {
+            return false;
+        }
+        lastFunction = currentFunction;
+        return true;
+    }
+
+    public void removeValueDatapoints() {
+        Iterator<Map.Entry<HmDatapointInfo, HmDatapoint>> iterator = datapoints.entrySet().iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().getKey().getParamsetType() == HmParamsetType.VALUES) {
+                iterator.remove();
+            }
+        }
     }
 
     /**
