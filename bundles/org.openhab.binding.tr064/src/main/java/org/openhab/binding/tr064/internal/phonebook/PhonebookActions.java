@@ -41,29 +41,14 @@ public class PhonebookActions implements ThingActions {
 
     @RuleAction(label = "@text/phonebookLookupActionLabel", description = "@text/phonebookLookupActionDescription")
     public @ActionOutput(name = "name", type = "java.lang.String") String phonebookLookup(
-            @ActionInput(name = "phonenumber") @Nullable String phonenumber,
-            @ActionInput(name = "matches") @Nullable Integer matchCount) {
-        return phonebookLookup(phonenumber, null, matchCount);
-    }
-
-    @RuleAction(label = "@text/phonebookLookupActionLabel", description = "@text/phonebookLookupActionDescription")
-    public @ActionOutput(name = "name", type = "java.lang.String") String phonebookLookup(
             @ActionInput(name = "phonenumber") @Nullable String phonenumber) {
-        return phonebookLookup(phonenumber, null, null);
+        return phonebookLookup(phonenumber, null);
     }
 
     @RuleAction(label = "@text/phonebookLookupActionLabel", description = "@text/phonebookLookupActionDescription")
     public @ActionOutput(name = "name", type = "java.lang.String") String phonebookLookup(
             @ActionInput(name = "phonenumber") @Nullable String phonenumber,
             @ActionInput(name = "phonebook") @Nullable String phonebook) {
-        return phonebookLookup(phonenumber, phonebook, null);
-    }
-
-    @RuleAction(label = "@text/phonebookLookupActionLabel", description = "@text/phonebookLookupActionDescription")
-    public @ActionOutput(name = "name", type = "java.lang.String") String phonebookLookup(
-            @ActionInput(name = "phonenumber") @Nullable String phonenumber,
-            @ActionInput(name = "phonebook") @Nullable String phonebook,
-            @ActionInput(name = "matches") @Nullable Integer matchCount) {
         if (phonenumber == null) {
             logger.warn("Cannot lookup a missing number.");
             return "";
@@ -74,35 +59,24 @@ public class PhonebookActions implements ThingActions {
             logger.info("Handler is null, cannot lookup number.");
             return phonenumber;
         } else {
-            int matchCountInt = matchCount == null ? 0 : matchCount;
             if (phonebook != null && !phonebook.isEmpty()) {
-                return handler.getPhonebookByName(phonebook).flatMap(p -> p.lookupNumber(phonenumber, matchCountInt))
+                return handler.getPhonebookByName(phonebook).flatMap(p -> p.lookupNumber(phonenumber))
                         .orElse(phonenumber);
             } else {
                 Collection<Phonebook> phonebooks = handler.getPhonebooks();
-                return phonebooks.stream().map(p -> p.lookupNumber(phonenumber, matchCountInt))
-                        .filter(Optional::isPresent).map(Optional::get).findAny().orElse(phonenumber);
+                return phonebooks.stream().map(p -> p.lookupNumber(phonenumber)).filter(Optional::isPresent)
+                        .map(Optional::get).findAny().orElse(phonenumber);
             }
         }
     }
 
-    public static String phonebookLookup(ThingActions actions, @Nullable String phonenumber,
-            @Nullable Integer matchCount) {
-        return phonebookLookup(actions, phonenumber, null, matchCount);
-    }
-
     public static String phonebookLookup(ThingActions actions, @Nullable String phonenumber) {
-        return phonebookLookup(actions, phonenumber, null, null);
+        return phonebookLookup(actions, phonenumber, null);
     }
 
     public static String phonebookLookup(ThingActions actions, @Nullable String phonenumber,
             @Nullable String phonebook) {
-        return phonebookLookup(actions, phonenumber, phonebook, null);
-    }
-
-    public static String phonebookLookup(ThingActions actions, @Nullable String phonenumber, @Nullable String phonebook,
-            @Nullable Integer matchCount) {
-        return ((PhonebookActions) actions).phonebookLookup(phonenumber, phonebook, matchCount);
+        return ((PhonebookActions) actions).phonebookLookup(phonenumber, phonebook);
     }
 
     @Override

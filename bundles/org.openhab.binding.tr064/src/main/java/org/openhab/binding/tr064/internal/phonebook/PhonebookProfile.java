@@ -53,7 +53,6 @@ public class PhonebookProfile implements StateProfile {
             .build();
 
     public static final String PHONEBOOK_PARAM = "phonebook";
-    public static final String MATCH_COUNT_PARAM = "matchCount";
     public static final String PHONE_NUMBER_INDEX_PARAM = "phoneNumberIndex";
 
     private final Logger logger = LoggerFactory.getLogger(PhonebookProfile.class);
@@ -63,7 +62,6 @@ public class PhonebookProfile implements StateProfile {
     private final @Nullable String phonebookName;
     private final @Nullable ThingUID thingUID;
     private final Map<ThingUID, PhonebookProvider> phonebookProviders;
-    private final int matchCount;
     private final int phoneNumberIndex;
 
     public PhonebookProfile(ProfileCallback callback, ProfileContext context,
@@ -73,15 +71,13 @@ public class PhonebookProfile implements StateProfile {
 
         Configuration configuration = context.getConfiguration();
         Object phonebookParam = configuration.get(PHONEBOOK_PARAM);
-        Object matchCountParam = configuration.get(MATCH_COUNT_PARAM);
         Object phoneNumberIndexParam = configuration.get(PHONE_NUMBER_INDEX_PARAM);
 
-        logger.debug("Profile configured with '{}'='{}', '{}'='{}', '{}'='{}'", PHONEBOOK_PARAM, phonebookParam,
-                MATCH_COUNT_PARAM, matchCountParam, PHONE_NUMBER_INDEX_PARAM, phoneNumberIndexParam);
+        logger.debug("Profile configured with '{}'='{}', '{}'='{}'", PHONEBOOK_PARAM, phonebookParam,
+                PHONE_NUMBER_INDEX_PARAM, phoneNumberIndexParam);
 
         ThingUID thingUID;
         String phonebookName = null;
-        int matchCount = 0;
         int phoneNumberIndex = 0;
 
         try {
@@ -95,13 +91,6 @@ public class PhonebookProfile implements StateProfile {
             thingUID = new ThingUID(UIDUtils.decode(phonebookParams[0]));
             if (phonebookParams.length == 2) {
                 phonebookName = UIDUtils.decode(phonebookParams[1]);
-            }
-            if (matchCountParam != null) {
-                if (matchCountParam instanceof BigDecimal) {
-                    matchCount = ((BigDecimal) matchCountParam).intValue();
-                } else if (matchCountParam instanceof String) {
-                    matchCount = Integer.parseInt((String) matchCountParam);
-                }
             }
             if (phoneNumberIndexParam != null) {
                 if (phoneNumberIndexParam instanceof BigDecimal) {
@@ -118,7 +107,6 @@ public class PhonebookProfile implements StateProfile {
 
         this.thingUID = thingUID;
         this.phonebookName = phonebookName;
-        this.matchCount = matchCount;
         this.phoneNumberIndex = phoneNumberIndex;
     }
 
@@ -175,10 +163,10 @@ public class PhonebookProfile implements StateProfile {
             return provider.getPhonebookByName(phonebookName).or(() -> {
                 logger.warn("Could not get phonebook '{}' from provider '{}'", phonebookName, thingUID);
                 return Optional.empty();
-            }).flatMap(phonebook -> phonebook.lookupNumber(phoneNumber, matchCount));
+            }).flatMap(phonebook -> phonebook.lookupNumber(phoneNumber));
         } else {
-            return provider.getPhonebooks().stream().map(p -> p.lookupNumber(phoneNumber, matchCount))
-                    .filter(Optional::isPresent).map(Optional::get).findAny();
+            return provider.getPhonebooks().stream().map(p -> p.lookupNumber(phoneNumber)).filter(Optional::isPresent)
+                    .map(Optional::get).findAny();
         }
     }
 

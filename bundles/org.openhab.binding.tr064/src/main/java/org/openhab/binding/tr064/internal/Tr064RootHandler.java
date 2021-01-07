@@ -46,6 +46,7 @@ import org.openhab.binding.tr064.internal.soap.SOAPValueConverter;
 import org.openhab.binding.tr064.internal.util.SCPDUtil;
 import org.openhab.binding.tr064.internal.util.Util;
 import org.openhab.core.cache.ExpiringCacheMap;
+import org.openhab.core.i18n.LocaleProvider;
 import org.openhab.core.thing.*;
 import org.openhab.core.thing.binding.BaseBridgeHandler;
 import org.openhab.core.thing.binding.ThingHandlerService;
@@ -71,6 +72,7 @@ public class Tr064RootHandler extends BaseBridgeHandler implements PhonebookProv
 
     private final Logger logger = LoggerFactory.getLogger(Tr064RootHandler.class);
     private final HttpClient httpClient;
+    private final LocaleProvider localeProvider;
 
     private Tr064RootConfiguration config = new Tr064RootConfiguration();
     private String deviceType = "";
@@ -90,9 +92,10 @@ public class Tr064RootHandler extends BaseBridgeHandler implements PhonebookProv
 
     private boolean communicationEstablished = false;
 
-    Tr064RootHandler(Bridge bridge, HttpClient httpClient) {
+    Tr064RootHandler(Bridge bridge, HttpClient httpClient, LocaleProvider localeProvider) {
         super(bridge);
         this.httpClient = httpClient;
+        this.localeProvider = localeProvider;
         this.soapConnector = new SOAPConnector(httpClient, endpointBaseURL);
     }
 
@@ -336,8 +339,8 @@ public class Tr064RootHandler extends BaseBridgeHandler implements PhonebookProv
                     try {
                         SOAPMessage soapMessageURL = soapConnector.doSOAPRequest(scpdService, "GetPhonebook",
                                 Map.of("NewPhonebookID", index));
-                        return soapValueConverter.getStateFromSOAPValue(soapMessageURL, "NewPhonebookURL", null)
-                                .map(url -> (Phonebook) new Tr064PhonebookImpl(httpClient, url.toString()));
+                        return soapValueConverter.getStateFromSOAPValue(soapMessageURL, "NewPhonebookURL", null).map(
+                                url -> (Phonebook) new Tr064PhonebookImpl(httpClient, localeProvider, url.toString()));
                     } catch (Tr064CommunicationException e) {
                         logger.warn("Failed to get phonebook with index {}:", index, e);
                     }

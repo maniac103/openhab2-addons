@@ -35,8 +35,7 @@ public interface Phonebook {
      * lookup a number in this phonebook
      *
      * @param number the number
-     * @param matchCount the number of matching digits, counting from far right
      * @return an Optional containing the name associated with this number (empty of not present)
      */
-    Optional<String> lookupNumber(String number, int matchCount);
+    Optional<String> lookupNumber(String number);
 }

@@ -23,6 +23,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.openhab.binding.tr064.internal.phonebook.PhonebookProfileFactory;
+import org.openhab.core.i18n.LocaleProvider;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
@@ -51,6 +52,7 @@ public class Tr064HandlerFactory extends BaseThingHandlerFactory {
 
     private final Logger logger = LoggerFactory.getLogger(Tr064HandlerFactory.class);
     private final HttpClient httpClient;
+    private final LocaleProvider localeProvider;
     private final PhonebookProfileFactory phonebookProfileFactory;
 
     // the Tr064ChannelTypeProvider is needed for creating the channels and
@@ -61,8 +63,9 @@ public class Tr064HandlerFactory extends BaseThingHandlerFactory {
 
     @Activate
     public Tr064HandlerFactory(@Reference Tr064ChannelTypeProvider channelTypeProvider,
-            @Reference PhonebookProfileFactory phonebookProfileFactory) {
+            @Reference LocaleProvider localeProvider, @Reference PhonebookProfileFactory phonebookProfileFactory) {
         this.channelTypeProvider = channelTypeProvider;
+        this.localeProvider = localeProvider;
         this.phonebookProfileFactory = phonebookProfileFactory;
         // use an insecure client (i.e. without verifying the certificate)
         this.httpClient = new HttpClient(new SslContextFactory.Client(true));
@@ -95,7 +98,7 @@ public class Tr064HandlerFactory extends BaseThingHandlerFactory {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
         if (Tr064RootHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
-            Tr064RootHandler handler = new Tr064RootHandler((Bridge) thing, httpClient);
+            Tr064RootHandler handler = new Tr064RootHandler((Bridge) thing, httpClient, localeProvider);
             if (thingTypeUID.equals(THING_TYPE_FRITZBOX)) {
                 phonebookProfileFactory.registerPhonebookProvider(handler);
             }

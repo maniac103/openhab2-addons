@@ -64,40 +64,32 @@ class PhonebookProfileTest {
     public static class ParameterSet {
         public final State state;
         public final State resultingState;
-        public final @Nullable Object matchCount;
         public final @Nullable Object phoneNumberIndex;
 
-        public ParameterSet(State state, State resultingState, @Nullable Object matchCount,
-                @Nullable Object phoneNumberIndex) {
+        public ParameterSet(State state, State resultingState, @Nullable Object phoneNumberIndex) {
             this.state = state;
             this.resultingState = resultingState;
-            this.matchCount = matchCount;
             this.phoneNumberIndex = phoneNumberIndex;
         }
     }
 
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][] { //
-                { new ParameterSet(UnDefType.UNDEF, UnDefType.UNDEF, null, null) }, //
-                { new ParameterSet(new StringType(JOHN_DOES_PHONE_NUMBER), new StringType(JOHN_DOES_NAME), null,
-                        null) }, //
-                { new ParameterSet(new StringType(JOHN_DOES_PHONE_NUMBER), new StringType(JOHN_DOES_NAME),
-                        BigDecimal.ONE, null) }, //
-                { new ParameterSet(new StringType(JOHN_DOES_PHONE_NUMBER), new StringType(JOHN_DOES_NAME), "3", null) }, //
+                { new ParameterSet(UnDefType.UNDEF, UnDefType.UNDEF, null) }, //
+                { new ParameterSet(new StringType(JOHN_DOES_PHONE_NUMBER), new StringType(JOHN_DOES_NAME), null) }, //
                 { new ParameterSet(new StringListType(JOHN_DOES_PHONE_NUMBER, INTERNAL_PHONE_NUMBER),
-                        new StringType(JOHN_DOES_NAME), null, null) }, //
+                        new StringType(JOHN_DOES_NAME), null) }, //
                 { new ParameterSet(new StringListType(JOHN_DOES_PHONE_NUMBER, INTERNAL_PHONE_NUMBER),
-                        new StringType(JOHN_DOES_NAME), null, BigDecimal.ZERO) }, //
+                        new StringType(JOHN_DOES_NAME), BigDecimal.ZERO) }, //
                 { new ParameterSet(new StringListType(INTERNAL_PHONE_NUMBER, JOHN_DOES_PHONE_NUMBER),
-                        new StringType(JOHN_DOES_NAME), null, BigDecimal.ONE) }, //
-                { new ParameterSet(new StringType(OTHER_PHONE_NUMBER), new StringType(OTHER_PHONE_NUMBER), null,
-                        null) }, //
+                        new StringType(JOHN_DOES_NAME), BigDecimal.ONE) }, //
+                { new ParameterSet(new StringType(OTHER_PHONE_NUMBER), new StringType(OTHER_PHONE_NUMBER), null) }, //
                 { new ParameterSet(new StringListType(OTHER_PHONE_NUMBER, INTERNAL_PHONE_NUMBER),
-                        new StringType(OTHER_PHONE_NUMBER), null, null) }, //
+                        new StringType(OTHER_PHONE_NUMBER), null) }, //
                 { new ParameterSet(new StringListType(OTHER_PHONE_NUMBER, INTERNAL_PHONE_NUMBER),
-                        new StringType(OTHER_PHONE_NUMBER), null, BigDecimal.ZERO) }, //
+                        new StringType(OTHER_PHONE_NUMBER), BigDecimal.ZERO) }, //
                 { new ParameterSet(new StringListType(INTERNAL_PHONE_NUMBER, OTHER_PHONE_NUMBER),
-                        new StringType(OTHER_PHONE_NUMBER), null, BigDecimal.ONE) }, //
+                        new StringType(OTHER_PHONE_NUMBER), BigDecimal.ONE) }, //
         });
     }
 
@@ -108,7 +100,7 @@ class PhonebookProfileTest {
     @NonNullByDefault
     private final Phonebook phonebook = new Phonebook() {
         @Override
-        public Optional<String> lookupNumber(String number, int matchCount) {
+        public Optional<String> lookupNumber(String number) {
             switch (number) {
                 case JOHN_DOES_PHONE_NUMBER:
                     return Optional.of(JOHN_DOES_NAME);
@@ -132,17 +124,13 @@ class PhonebookProfileTest {
     @ParameterizedTest
     @MethodSource("parameters")
     public void testPhonebookProfileResolvesPhoneNumber(ParameterSet parameterSet) {
-        StateProfile profile = initProfile(MY_PHONEBOOK, parameterSet.matchCount, parameterSet.phoneNumberIndex);
+        StateProfile profile = initProfile(MY_PHONEBOOK, parameterSet.phoneNumberIndex);
         verifySendUpdate(profile, parameterSet.state, parameterSet.resultingState);
     }
 
-    private StateProfile initProfile(Object phonebookName, @Nullable Object matchCount,
-            @Nullable Object phoneNumberIndex) {
+    private StateProfile initProfile(Object phonebookName, @Nullable Object phoneNumberIndex) {
         Map<String, Object> properties = new HashMap<>();
         properties.put(PhonebookProfile.PHONEBOOK_PARAM, phonebookName);
-        if (matchCount != null) {
-            properties.put(PhonebookProfile.MATCH_COUNT_PARAM, matchCount);
-        }
         if (phoneNumberIndex != null) {
             properties.put(PhonebookProfile.PHONE_NUMBER_INDEX_PARAM, phoneNumberIndex);
         }

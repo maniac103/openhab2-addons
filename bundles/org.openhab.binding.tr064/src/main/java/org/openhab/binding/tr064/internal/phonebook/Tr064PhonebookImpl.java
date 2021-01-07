@@ -15,6 +15,7 @@ package org.openhab.binding.tr064.internal.phonebook;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -32,8 +33,14 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpMethod;
 import org.openhab.binding.tr064.internal.dto.additions.PhonebooksType;
+import org.openhab.core.i18n.LocaleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat;
+import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;
 
 /**
  * The {@link Tr064PhonebookImpl} class implements a phonebook
@@ -46,13 +53,15 @@ public class Tr064PhonebookImpl implements Phonebook {
 
     private Map<String, String> phonebook = new HashMap<>();
 
+    private final LocaleProvider localeProvider;
     private final HttpClient httpClient;
     private final String phonebookUrl;
 
     private String phonebookName = "";
 
-    public Tr064PhonebookImpl(HttpClient httpClient, String phonebookUrl) {
+    public Tr064PhonebookImpl(HttpClient httpClient, LocaleProvider localeProvider, String phonebookUrl) {
         this.httpClient = httpClient;
+        this.localeProvider = localeProvider;
         this.phonebookUrl = phonebookUrl;
         getPhonebook();
     }
@@ -86,14 +95,11 @@ public class Tr064PhonebookImpl implements Phonebook {
     }
 
     @Override
-    public Optional<String> lookupNumber(String number, int matchCount) {
+    public Optional<String> lookupNumber(String number) {
         String normalized = normalizeNumber(number);
-        String matchString = matchCount > 0 && matchCount < normalized.length()
-                ? normalized.substring(normalized.length() - matchCount)
-                : normalized;
-        logger.trace("Normalized '{}' to '{}', matchString is '{}'", number, normalized, matchString);
-        return matchString.isBlank() ? Optional.empty()
-                : phonebook.keySet().stream().filter(n -> n.endsWith(matchString)).findFirst().map(phonebook::get);
+        logger.trace("Normalized '{}' to '{}'", number, normalized);
+        return normalized.isBlank() ? Optional.empty()
+                : phonebook.keySet().stream().filter(n -> n.equals(normalized)).findFirst().map(phonebook::get);
     }
 
     @Override
@@ -101,8 +107,17 @@ public class Tr064PhonebookImpl implements Phonebook {
         return "Phonebook{" + "phonebookName='" + phonebookName + "', phonebook=" + phonebook + '}';
     }
 
-    private String normalizeNumber(String number) {
-        // Naive normalization: remove all non-digit characters
-        return number.replaceAll("[^0-9]", "");
+    private String normalizeNumber(String input) {
+        final PhoneNumberUtil pnu = PhoneNumberUtil.getInstance();
+        final Locale locale = localeProvider != null ? localeProvider.getLocale() : null;
+        try {
+            final PhoneNumber number = pnu.parse(input, locale != null ? locale.getCountry() : null);
+            if (pnu.isValidNumber(number)) {
+                return pnu.format(number, PhoneNumberFormat.E164);
+            }
+        } catch (NumberParseException e) {
+            logger.debug("Failed to parse '{}' as phone number: {}", input, e.getMessage());
+        }
+        return input;
     }
 }
