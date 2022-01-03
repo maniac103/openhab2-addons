@@ -18,11 +18,6 @@ package org.openhab.binding.ecovacs.internal;
  * @author Danny Baumann - Initial contribution
  */
 public class EcovacsConfiguration {
-
-    /**
-     * Sample configuration parameters. Replace with your own.
-     */
-    public String hostname;
+    public String email;
     public String password;
-    public int refreshInterval;
 }
