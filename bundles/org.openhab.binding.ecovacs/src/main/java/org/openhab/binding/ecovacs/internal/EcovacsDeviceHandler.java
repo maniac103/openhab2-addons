@@ -12,8 +12,6 @@
  */
 package org.openhab.binding.ecovacs.internal;
 
-import static org.openhab.binding.ecovacs.internal.EcovacsBindingConstants.*;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.thing.ChannelUID;
@@ -21,41 +19,29 @@ import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.types.Command;
-import org.openhab.core.types.RefreshType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link EcovacsHandler} is responsible for handling commands, which are
+ * The {@link EcovacsDeviceHandler} is responsible for handling commands, which are
  * sent to one of the channels.
  *
  * @author Danny Baumann - Initial contribution
  */
 @NonNullByDefault
-public class EcovacsHandler extends BaseThingHandler {
+public class EcovacsDeviceHandler extends BaseThingHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(EcovacsHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(EcovacsDeviceHandler.class);
 
     private @Nullable EcovacsConfiguration config;
 
-    public EcovacsHandler(Thing thing) {
+    public EcovacsDeviceHandler(Thing thing) {
         super(thing);
     }
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        if (CHANNEL_1.equals(channelUID.getId())) {
-            if (command instanceof RefreshType) {
-                // TODO: handle data refresh
-            }
-
-            // TODO: handle command
-
-            // Note: if communication with thing fails for some reason,
-            // indicate that by setting the status with detail information:
-            // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-            // "Could not control device at IP address x.x.x.x");
-        }
+        // TODO
     }
 
     @Override

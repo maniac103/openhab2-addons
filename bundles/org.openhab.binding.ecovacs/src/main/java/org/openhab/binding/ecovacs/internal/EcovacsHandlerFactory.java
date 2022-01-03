@@ -18,12 +18,16 @@ import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.core.io.net.http.HttpClientFactory;
+import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.binding.BaseThingHandlerFactory;
 import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.thing.binding.ThingHandlerFactory;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * The {@link EcovacsHandlerFactory} is responsible for creating things and thing
@@ -34,8 +38,14 @@ import org.osgi.service.component.annotations.Component;
 @NonNullByDefault
 @Component(configurationPid = "binding.ecovacs", service = ThingHandlerFactory.class)
 public class EcovacsHandlerFactory extends BaseThingHandlerFactory {
+    private HttpClientFactory httpClientFactory;
 
-    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_SAMPLE);
+    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_API, THING_TYPE_VACUUM);
+
+    @Activate
+    public EcovacsHandlerFactory(final @Reference HttpClientFactory httpClientFactory) {
+        this.httpClientFactory = httpClientFactory;
+    }
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {
@@ -46,10 +56,10 @@ public class EcovacsHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
-        if (THING_TYPE_SAMPLE.equals(thingTypeUID)) {
-            return new EcovacsHandler(thing);
+        if (THING_TYPE_API.equals(thingTypeUID)) {
+            return new EcovacsApiHandler((Bridge) thing, httpClientFactory);
+        } else {
+            return new EcovacsDeviceHandler(thing);
         }
-
-        return null;
     }
 }
