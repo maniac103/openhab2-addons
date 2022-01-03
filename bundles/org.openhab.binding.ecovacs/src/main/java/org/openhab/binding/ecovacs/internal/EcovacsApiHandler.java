@@ -33,9 +33,7 @@ import com.google.gson.Gson;
 
 import dev.pott.sucks.api.EcovacsApi;
 import dev.pott.sucks.api.EcovacsApiConfiguration;
-import dev.pott.sucks.api.dto.response.main.AccessData;
-import dev.pott.sucks.api.dto.response.main.AuthCode;
-import dev.pott.sucks.api.dto.response.portal.PortalLoginResponse;
+import dev.pott.sucks.api.EcovacsApiException;
 import dev.pott.sucks.util.MD5Util;
 
 /**
@@ -50,7 +48,6 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
 
     private @Nullable EcovacsDeviceDiscoveryService discoveryService;
     private @Nullable EcovacsApi api;
-    private @Nullable PortalLoginResponse loginData;
     private HttpClientFactory httpClientFactory;
 
     public EcovacsApiHandler(Bridge bridge, HttpClientFactory httpClientFactory) {
@@ -65,12 +62,6 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
     @Nullable
     public EcovacsApi getApi() {
         return api;
-    }
-
-    // FIXME: the API should probably deal with this internally
-    @Nullable
-    public PortalLoginResponse getLoginData() {
-        return loginData;
     }
 
     @Override
@@ -111,29 +102,18 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
                     "EU", "DE", "EN");
 
             api = new EcovacsApi(httpClientFactory.getCommonHttpClient(), new Gson(), apiConfig);
-            loginData = null;
-
-            AccessData ad = api.login();
-            if (ad != null) {
-                AuthCode ac = api.getAuthCode(ad);
-                if (ac != null) {
-                    loginData = api.portalLogin(ac, ad);
-                }
-            }
-
-            if (loginData != null) {
+            try {
+                api.loginAndGetAccessToken();
                 updateStatus(ThingStatus.ONLINE);
-            } else if (ad != null) {
-                // login was successful
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-                // TODO: schedule reinit?
-            } else {
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR);
-            }
 
-            final EcovacsDeviceDiscoveryService discoveryService = this.discoveryService;
-            if (discoveryService != null) {
-                discoveryService.startScan();
+                final EcovacsDeviceDiscoveryService discoveryService = this.discoveryService;
+                if (discoveryService != null) {
+                    discoveryService.startScan();
+                }
+            } catch (EcovacsApiException e) {
+                logger.debug("Ecovacs API login failed", e);
+                api = null;
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
             }
         });
     }
