@@ -12,15 +12,27 @@
  */
 package org.openhab.binding.ecovacs.internal;
 
+import java.util.Optional;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.core.library.types.DecimalType;
+import org.openhab.core.library.types.StringType;
+import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
+import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import dev.pott.sucks.api.EcovacsApi;
+import dev.pott.sucks.api.EcovacsApiException;
+import dev.pott.sucks.api.EcovacsDevice;
+import dev.pott.sucks.cleaner.CleanMode;
+import dev.pott.sucks.cleaner.SuctionPower;
 
 /**
  * The {@link EcovacsDeviceHandler} is responsible for handling commands, which are
@@ -29,11 +41,15 @@ import org.slf4j.LoggerFactory;
  * @author Danny Baumann - Initial contribution
  */
 @NonNullByDefault
-public class EcovacsDeviceHandler extends BaseThingHandler {
+public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDevice.StateChangeListener {
 
     private final Logger logger = LoggerFactory.getLogger(EcovacsDeviceHandler.class);
 
     private @Nullable EcovacsConfiguration config;
+    private @Nullable EcovacsDevice device;
+
+    private @Nullable Boolean lastWasCharging;
+    private @Nullable CleanMode lastCleanMode;
 
     public EcovacsDeviceHandler(Thing thing) {
         super(thing);
@@ -48,39 +64,89 @@ public class EcovacsDeviceHandler extends BaseThingHandler {
     public void initialize() {
         config = getConfigAs(EcovacsConfiguration.class);
 
-        // TODO: Initialize the handler.
-        // The framework requires you to return from this method quickly. Also, before leaving this method a thing
-        // status from one of ONLINE, OFFLINE or UNKNOWN must be set. This might already be the real thing status in
-        // case you can decide it directly.
-        // In case you can not decide the thing status directly (e.g. for long running connection handshake using WAN
-        // access or similar) you should set status UNKNOWN here and then decide the real status asynchronously in the
-        // background.
-
-        // set the thing status to UNKNOWN temporarily and let the background task decide for the real status.
-        // the framework is then able to reuse the resources from the thing handler initialization.
-        // we set this upfront to reliably check status updates in unit tests.
         updateStatus(ThingStatus.UNKNOWN);
 
-        // Example for background initialization:
         scheduler.execute(() -> {
-            boolean thingReachable = true; // <background task with long running initialization here>
-            // when done do:
-            if (thingReachable) {
-                updateStatus(ThingStatus.ONLINE);
+            final Bridge bridge = getBridge();
+            final EcovacsApiHandler handler = bridge != null ? (EcovacsApiHandler) bridge.getHandler() : null;
+            final EcovacsApi api = handler != null ? handler.getApi() : null;
+
+            if (api != null) {
+                try {
+                    String serial = getThing().getUID().getId();
+                    Optional<EcovacsDevice> device = api.getDevices()
+                            .stream()
+                            .filter(d -> serial.equals(d.getSerialNumber()))
+                            .findFirst();
+                    if (device.isPresent()) {
+                        this.device = device.get();
+                        this.device.connect(this);
+                        updateStatus(ThingStatus.ONLINE);
+                    } else {
+                        updateStatus(ThingStatus.OFFLINE);
+                    }
+                } catch (EcovacsApiException e) {
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+                }
             } else {
-                updateStatus(ThingStatus.OFFLINE);
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_UNINITIALIZED);
             }
         });
+    }
 
-        // These logging types should be primarily used by bindings
-        // logger.trace("Example trace message");
-        // logger.debug("Example debug message");
-        // logger.warn("Example warn message");
+    @Override
+    public void dispose() {
+        super.dispose();
+        EcovacsDevice device = this.device;
+        if (device != null) {
+            device.disconnect();
+        }
+    }
 
-        // Note: When initialization can NOT be done set the status with more details for further
-        // analysis. See also class ThingStatusDetail for all available status details.
-        // Add a description to give user information to understand why thing does not work as expected. E.g.
-        // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
-        // "Can not access device as username and/or password are invalid");
+    @Override
+    public void onBatteryLevelChanged(EcovacsDevice device, int newLevelPercent) {
+        updateState(EcovacsBindingConstants.CHANNEL_ID_BATTERY_LEVEL, new DecimalType(newLevelPercent));
+    }
+
+    @Override
+    public void onChargingStateChanged(EcovacsDevice device, boolean charging) {
+        lastWasCharging = charging;
+        updateStateChannel();
+    }
+
+    @Override
+    public void onCleaningModeChanged(EcovacsDevice device, CleanMode newMode) {
+        lastCleanMode = newMode;
+        updateStateChannel();
+    }
+
+    @Override
+    public void onCleaningPowerChanged(EcovacsDevice device, SuctionPower newPower) {
+
+    }
+
+    private void updateStateChannel() {
+        if (lastWasCharging == null || lastCleanMode == null) {
+            return;
+        }
+        updateState(EcovacsBindingConstants.CHANNEL_ID_STATE, new StringType(determineStateChannelValue()));
+    }
+
+    private String determineStateChannelValue() {
+        if (lastWasCharging) {
+            return "charging";
+        }
+        switch (lastCleanMode) {
+            case AUTO: return "auto";
+            case EDGE: return "edge";
+            case SPOT: return "spot";
+            case SPOT_AREA: return "spotArea";
+            case CUSTOM_AREA: return "customArea";
+            case SINGLE_ROOM: return "singleRoom";
+            case PAUSE: return "pause";
+            case STOP: return "stop";
+            case RETURNING: return "returning";
+        }
+        return "";
     }
 }
