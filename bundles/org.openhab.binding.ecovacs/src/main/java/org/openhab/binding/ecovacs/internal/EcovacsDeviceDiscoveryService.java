@@ -14,7 +14,6 @@ package org.openhab.binding.ecovacs.internal;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Future;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -33,8 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import dev.pott.sucks.api.EcovacsApi;
 import dev.pott.sucks.api.EcovacsApiException;
-import dev.pott.sucks.api.dto.response.portal.Device;
-import dev.pott.sucks.api.dto.response.portal.IotProduct;
+import dev.pott.sucks.api.EcovacsDevice;
 
 @NonNullByDefault
 @Component(service = DiscoveryService.class, configurationPid = "discovery.ecovacs")
@@ -88,22 +86,14 @@ public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService impl
             }
 
             try {
-                List<IotProduct> products = api.getIotProductMap();
-                List<Device> devices = api.getDevices();
+                List<EcovacsDevice> devices = api.getDevices();
 
-                for (Device device : devices) {
-                    Optional<IotProduct> product = products.stream()
-                            .filter(prod -> prod.getClassId().equals(device.getDeviceClass())).findFirst();
-                    if (!product.isPresent()) {
-                        logger.debug("Device {} has unknown class {}, ignoring.", device.getDid(),
-                                device.getDeviceClass());
-                        continue;
-                    }
-                    deviceDiscovered(device, product.get());
+                for (EcovacsDevice device : devices) {
+                    deviceDiscovered(device);
                 }
                 for (Thing thing : apiHandler.getThing().getThings()) {
-                    String deviceId = thing.getUID().getId();
-                    if (!devices.stream().anyMatch(d -> deviceId.equals(d.getDid()))) {
+                    String serial = thing.getUID().getId();
+                    if (!devices.stream().anyMatch(d -> serial.equals(d.getSerialNumber()))) {
                         thingRemoved(thing.getUID());
                     }
                 }
@@ -126,14 +116,15 @@ public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService impl
         super.stopScan();
     }
 
-    private void deviceDiscovered(Device device, IotProduct product) {
+    private void deviceDiscovered(EcovacsDevice device) {
         // TODO: check whether device actually is a vacuum cleaner - how?
 
         ThingUID thingUID = new ThingUID(EcovacsBindingConstants.THING_TYPE_VACUUM, apiHandler.getThing().getUID(),
-                device.getDid());
+                device.getSerialNumber());
         DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID)
-                .withBridge(apiHandler.getThing().getUID()).withProperty(Thing.PROPERTY_SERIAL_NUMBER, device.getName())
-                .withProperty(Thing.PROPERTY_MODEL_ID, product.getDefinition().name)
+                .withBridge(apiHandler.getThing().getUID()).withProperty(Thing.PROPERTY_SERIAL_NUMBER, device.getSerialNumber())
+                .withProperty(Thing.PROPERTY_MODEL_ID, device.getModelName())
+                .withProperty(Thing.PROPERTY_FIRMWARE_VERSION, device.getFirmwareVersion())
                 .withRepresentationProperty(Thing.PROPERTY_MODEL_ID).build();
         thingDiscovered(discoveryResult);
     }
