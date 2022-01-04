@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.ThingTypeUID;
 
 /**
@@ -28,4 +29,8 @@ public class EcovacsBindingConstants {
     // List of all Thing Type UIDs
     public static final ThingTypeUID THING_TYPE_API = new ThingTypeUID(BINDING_ID, "ecovacsapi");
     public static final ThingTypeUID THING_TYPE_VACUUM = new ThingTypeUID(BINDING_ID, "vacuum");
+
+    // List of all channel UIDs
+    public static final String CHANNEL_ID_STATE = "state";
+    public static final String CHANNEL_ID_BATTERY_LEVEL = "battery";
 }
