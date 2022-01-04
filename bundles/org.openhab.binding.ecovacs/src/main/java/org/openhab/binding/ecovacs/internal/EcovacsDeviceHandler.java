@@ -48,6 +48,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     private @Nullable EcovacsConfiguration config;
     private @Nullable EcovacsDevice device;
 
+    private int lastBatteryLevel;
     private @Nullable Boolean lastWasCharging;
     private @Nullable CleanMode lastCleanMode;
 
@@ -104,7 +105,25 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     }
 
     @Override
+    public void channelLinked(ChannelUID channelUID) {
+        EcovacsDevice device = this.device;
+        if (device == null) {
+            return;
+        }
+
+        switch (channelUID.getId()) {
+            case EcovacsBindingConstants.CHANNEL_ID_BATTERY_LEVEL:
+                onBatteryLevelChanged(device, lastBatteryLevel);
+                break;
+            case EcovacsBindingConstants.CHANNEL_ID_STATE:
+                updateStateChannel();
+                break;
+        }
+    }
+
+    @Override
     public void onBatteryLevelChanged(EcovacsDevice device, int newLevelPercent) {
+        lastBatteryLevel = newLevelPercent;
         updateState(EcovacsBindingConstants.CHANNEL_ID_BATTERY_LEVEL, new DecimalType(newLevelPercent));
     }
 
