@@ -101,9 +101,10 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
                     // FIXME: can get this from locale?
                     "EU", "DE", "EN");
 
-            api = new EcovacsApi(httpClientFactory.getCommonHttpClient(), new Gson(), apiConfig);
+            EcovacsApi api = new EcovacsApi(httpClientFactory.getCommonHttpClient(), new Gson(), apiConfig);
             try {
                 api.loginAndGetAccessToken();
+                this.api = api;
                 updateStatus(ThingStatus.ONLINE);
 
                 final EcovacsDeviceDiscoveryService discoveryService = this.discoveryService;
@@ -112,7 +113,7 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
                 }
             } catch (EcovacsApiException e) {
                 logger.debug("Ecovacs API login failed", e);
-                api = null;
+                this.api = null;
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
             }
         });

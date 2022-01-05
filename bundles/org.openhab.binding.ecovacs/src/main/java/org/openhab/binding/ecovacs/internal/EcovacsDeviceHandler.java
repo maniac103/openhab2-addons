@@ -49,7 +49,6 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     private final Logger logger = LoggerFactory.getLogger(EcovacsDeviceHandler.class);
 
-    private @Nullable EcovacsConfiguration config;
     private @Nullable EcovacsDevice device;
 
     private int lastBatteryLevel;
@@ -75,8 +74,6 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void initialize() {
-        config = getConfigAs(EcovacsConfiguration.class);
-
         updateStatus(ThingStatus.UNKNOWN);
 
         scheduler.execute(() -> {
@@ -90,8 +87,8 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                     Optional<EcovacsDevice> device = api.getDevices().stream()
                             .filter(d -> serial.equals(d.getSerialNumber())).findFirst();
                     if (device.isPresent()) {
+                        device.get().connect(this);
                         this.device = device.get();
-                        this.device.connect(this);
                         updateStatus(ThingStatus.ONLINE);
                     } else {
                         updateStatus(ThingStatus.OFFLINE);
@@ -155,20 +152,23 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     }
 
     private void updateStateAndCommandChannels() {
-        if (lastWasCharging == null || lastCleanMode == null) {
+        Boolean charging = this.lastWasCharging;
+        CleanMode cleanMode = this.lastCleanMode;
+        if (charging == null || cleanMode == null) {
             return;
         }
-        String commandState = determineCommandChannelValue();
-        updateState(EcovacsBindingConstants.CHANNEL_ID_STATE, new StringType(determineStateChannelValue()));
+        String commandState = determineCommandChannelValue(charging, cleanMode);
+        updateState(EcovacsBindingConstants.CHANNEL_ID_STATE,
+                new StringType(determineStateChannelValue(charging, cleanMode)));
         updateState(EcovacsBindingConstants.CHANNEL_ID_COMMAND,
                 commandState != null ? new StringType(commandState) : UnDefType.NULL);
     }
 
-    private String determineStateChannelValue() {
-        if (lastWasCharging) {
+    private String determineStateChannelValue(boolean charging, CleanMode cleanMode) {
+        if (charging) {
             return "charging";
         }
-        switch (lastCleanMode) {
+        switch (cleanMode) {
             case AUTO:
                 return "auto";
             case EDGE:
@@ -187,15 +187,17 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                 return "stop";
             case RETURNING:
                 return "returning";
+            case IDLE:
+                break;
         }
         return "";
     }
 
-    private @Nullable String determineCommandChannelValue() {
-        if (lastWasCharging) {
+    private @Nullable String determineCommandChannelValue(boolean charging, CleanMode cleanMode) {
+        if (charging) {
             return EcovacsBindingConstants.CMD_CHARGE;
         }
-        switch (lastCleanMode) {
+        switch (cleanMode) {
             case AUTO:
                 return EcovacsBindingConstants.CMD_AUTO_CLEAN;
             case PAUSE:
