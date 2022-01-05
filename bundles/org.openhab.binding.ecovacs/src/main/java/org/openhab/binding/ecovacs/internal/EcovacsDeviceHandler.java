@@ -25,12 +25,16 @@ import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.types.Command;
+import org.openhab.core.types.UnDefType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.pott.sucks.api.EcovacsApi;
 import dev.pott.sucks.api.EcovacsApiException;
 import dev.pott.sucks.api.EcovacsDevice;
+import dev.pott.sucks.api.dto.request.commands.GoChargingCommand;
+import dev.pott.sucks.api.dto.request.commands.StartCleaningCommand;
+import dev.pott.sucks.api.dto.request.commands.StopCommand;
 import dev.pott.sucks.cleaner.CleanMode;
 import dev.pott.sucks.cleaner.SuctionPower;
 
@@ -58,7 +62,15 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        // TODO
+        String channel = channelUID.getId();
+
+        if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_COMMAND) && command instanceof StringType) {
+            try {
+                handleDeviceCommand(command.toString());
+            } catch (EcovacsApiException e) {
+                logger.debug("Handling device command " + command + " failed", e);
+            }
+        }
     }
 
     @Override
@@ -116,7 +128,8 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                 onBatteryLevelChanged(device, lastBatteryLevel);
                 break;
             case EcovacsBindingConstants.CHANNEL_ID_STATE:
-                updateStateChannel();
+            case EcovacsBindingConstants.CHANNEL_ID_COMMAND:
+                updateStateAndCommandChannels();
                 break;
         }
     }
@@ -130,13 +143,13 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     @Override
     public void onChargingStateChanged(EcovacsDevice device, boolean charging) {
         lastWasCharging = charging;
-        updateStateChannel();
+        updateStateAndCommandChannels();
     }
 
     @Override
     public void onCleaningModeChanged(EcovacsDevice device, CleanMode newMode) {
         lastCleanMode = newMode;
-        updateStateChannel();
+        updateStateAndCommandChannels();
     }
 
     @Override
@@ -144,11 +157,13 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     }
 
-    private void updateStateChannel() {
+    private void updateStateAndCommandChannels() {
         if (lastWasCharging == null || lastCleanMode == null) {
             return;
         }
+        String commandState = determineCommandChannelValue();
         updateState(EcovacsBindingConstants.CHANNEL_ID_STATE, new StringType(determineStateChannelValue()));
+        updateState(EcovacsBindingConstants.CHANNEL_ID_COMMAND, commandState != null ? new StringType(commandState) : UnDefType.NULL);
     }
 
     private String determineStateChannelValue() {
@@ -167,5 +182,39 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             case RETURNING: return "returning";
         }
         return "";
+    }
+
+    private @Nullable String determineCommandChannelValue() {
+        if (lastWasCharging) {
+            return EcovacsBindingConstants.CMD_CHARGE;
+        }
+        switch (lastCleanMode) {
+            case AUTO: return EcovacsBindingConstants.CMD_AUTO_CLEAN;
+            case PAUSE: return EcovacsBindingConstants.CMD_PAUSE;
+            case STOP: return EcovacsBindingConstants.CMD_STOP;
+            case RETURNING: return EcovacsBindingConstants.CMD_CHARGE;
+            default: break;
+        }
+        return null;
+    }
+
+    private void handleDeviceCommand(String command) throws EcovacsApiException {
+        final EcovacsDevice device = this.device;
+        if (device == null) {
+            logger.debug("Ignoring command {} for {}, no active connection", command, getThing().getUID());
+            return;
+        }
+
+        switch (command) {
+            case EcovacsBindingConstants.CMD_AUTO_CLEAN:
+                device.sendCommand(new StartCleaningCommand());
+                break;
+            case EcovacsBindingConstants.CMD_STOP:
+                device.sendCommand(new StopCommand());
+                break;
+            case EcovacsBindingConstants.CMD_CHARGE:
+                device.sendCommand(new GoChargingCommand());
+                break;
+        }
     }
 }

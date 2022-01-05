@@ -13,7 +13,6 @@
 package org.openhab.binding.ecovacs.internal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.ThingTypeUID;
 
 /**
@@ -32,5 +31,11 @@ public class EcovacsBindingConstants {
 
     // List of all channel UIDs
     public static final String CHANNEL_ID_STATE = "state";
+    public static final String CHANNEL_ID_COMMAND = "command";
     public static final String CHANNEL_ID_BATTERY_LEVEL = "battery";
+
+    public static final String CMD_AUTO_CLEAN = "clean";
+    public static final String CMD_PAUSE = "pause";
+    public static final String CMD_CHARGE = "charge";
+    public static final String CMD_STOP = "stop";
 }
