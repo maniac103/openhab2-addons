@@ -13,11 +13,15 @@
 package org.openhab.binding.ecovacs.internal;
 
 import java.util.Optional;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.core.library.types.DecimalType;
+import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
+import org.openhab.core.library.unit.SIUnits;
+import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
@@ -49,6 +53,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     private final Logger logger = LoggerFactory.getLogger(EcovacsDeviceHandler.class);
 
+    private @Nullable ScheduledFuture<?> reconnectFuture;
     private @Nullable EcovacsDevice device;
 
     private int lastBatteryLevel;
@@ -75,29 +80,28 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     @Override
     public void initialize() {
         updateStatus(ThingStatus.UNKNOWN);
-
         scheduler.execute(() -> {
             final Bridge bridge = getBridge();
             final EcovacsApiHandler handler = bridge != null ? (EcovacsApiHandler) bridge.getHandler() : null;
             final EcovacsApi api = handler != null ? handler.getApi() : null;
 
-            if (api != null) {
-                try {
-                    String serial = getThing().getUID().getId();
-                    Optional<EcovacsDevice> device = api.getDevices().stream()
-                            .filter(d -> serial.equals(d.getSerialNumber())).findFirst();
-                    if (device.isPresent()) {
-                        device.get().connect(this);
-                        this.device = device.get();
-                        updateStatus(ThingStatus.ONLINE);
-                    } else {
-                        updateStatus(ThingStatus.OFFLINE);
-                    }
-                } catch (EcovacsApiException e) {
-                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-                }
-            } else {
+            if (api == null) {
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_UNINITIALIZED);
+                return;
+            }
+
+            try {
+                String serial = getThing().getUID().getId();
+                Optional<EcovacsDevice> device = api.getDevices().stream()
+                        .filter(d -> serial.equals(d.getSerialNumber())).findFirst();
+                if (device.isPresent()) {
+                    this.device = device.get();
+                    connectToDevice();
+                } else {
+                    updateStatus(ThingStatus.OFFLINE);
+                }
+            } catch (EcovacsApiException e) {
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
             }
         });
     }
@@ -108,6 +112,10 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         EcovacsDevice device = this.device;
         if (device != null) {
             device.disconnect();
+        }
+        ScheduledFuture<?> reconnectFuture = this.reconnectFuture;
+        if (reconnectFuture != null) {
+            reconnectFuture.cancel(true);
         }
     }
 
@@ -132,7 +140,8 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     @Override
     public void onBatteryLevelChanged(EcovacsDevice device, int newLevelPercent) {
         lastBatteryLevel = newLevelPercent;
-        updateState(EcovacsBindingConstants.CHANNEL_ID_BATTERY_LEVEL, new DecimalType(newLevelPercent));
+        updateState(EcovacsBindingConstants.CHANNEL_ID_BATTERY_LEVEL,
+                new QuantityType<>(newLevelPercent, Units.PERCENT));
     }
 
     @Override
@@ -149,6 +158,49 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void onCleaningPowerChanged(EcovacsDevice device, SuctionPower newPower) {
+    }
+
+    @Override
+    public void onCleaningStatsChanged(EcovacsDevice device, int cleanedArea, int cleaningTimeSeconds) {
+        // FIXME: area unit probably depends on setting in app?
+        updateState(EcovacsBindingConstants.CHANNEL_ID_CLEANED_AREA,
+                new QuantityType<>(cleanedArea, SIUnits.SQUARE_METRE));
+        updateState(EcovacsBindingConstants.CHANNEL_ID_CLEANING_TIME,
+                new QuantityType<>(cleaningTimeSeconds, Units.SECOND));
+    }
+
+    @Override
+    public void onDeviceConnectionFailed(final EcovacsDevice device, Throwable error) {
+        logger.debug(getThing().getUID() + ": Device connection failed, reconnecting", error);
+        device.disconnect();
+        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+        if (reconnectFuture == null) {
+            scheduler.schedule(() -> connectToDevice(), 5, TimeUnit.SECONDS);
+        }
+    }
+
+    private void scheduleReconnection() {
+        if (reconnectFuture == null) {
+            reconnectFuture = scheduler.schedule(() -> {
+                reconnectFuture = null;
+                connectToDevice();
+            }, 5, TimeUnit.SECONDS);
+        }
+    }
+
+    private void connectToDevice() {
+        EcovacsDevice device = this.device;
+        if (device == null) {
+            return;
+        }
+        try {
+            device.connect(this);
+            updateStatus(ThingStatus.ONLINE);
+        } catch (EcovacsApiException e) {
+            logger.debug(getThing().getUID() + ": Could not establish device connection, reconnecting", e);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+            scheduleReconnection();
+        }
     }
 
     private void updateStateAndCommandChannels() {
