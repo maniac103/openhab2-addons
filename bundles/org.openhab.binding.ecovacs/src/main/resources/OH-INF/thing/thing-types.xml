@@ -14,6 +14,7 @@
 
 		<channels>
 			<channel id="state" typeId="state"/>
+			<channel id="command" typeId="command"/>
 			<channel id="battery" typeId="battery"/>
 		</channels>
 	</thing-type>
@@ -31,10 +32,24 @@
 				<option value="customArea">Custom area cleaning</option>
 				<option value="singleRoom">Single room cleaning</option>
 				<option value="pause">Paused</option>
-				<option value="stop">Stopped home</option>
+				<option value="stop">Stopped</option>
 				<option value="returning">Going to charge station</option>
 				<option value="charging">Charging</option>
 				<option value="">Idle</option>
+			</options>
+		</state>
+	</channel-type>
+
+	<channel-type id="command">
+		<item-type>String</item-type>
+		<label>Command</label>
+		<description>Command to execute</description>
+		<state>
+			<options>
+				<option value="clean">Automatic cleaning</option>
+				<option value="pause">Pause</option>
+				<option value="stop">Stop</option>
+				<option value="charge">Go to charge station</option>
 			</options>
 		</state>
 	</channel-type>
