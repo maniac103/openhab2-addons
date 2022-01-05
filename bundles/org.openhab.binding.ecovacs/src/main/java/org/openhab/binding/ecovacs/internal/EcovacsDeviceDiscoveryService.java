@@ -122,7 +122,8 @@ public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService impl
         ThingUID thingUID = new ThingUID(EcovacsBindingConstants.THING_TYPE_VACUUM, apiHandler.getThing().getUID(),
                 device.getSerialNumber());
         DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID)
-                .withBridge(apiHandler.getThing().getUID()).withProperty(Thing.PROPERTY_SERIAL_NUMBER, device.getSerialNumber())
+                .withBridge(apiHandler.getThing().getUID())
+                .withProperty(Thing.PROPERTY_SERIAL_NUMBER, device.getSerialNumber())
                 .withProperty(Thing.PROPERTY_MODEL_ID, device.getModelName())
                 .withProperty(Thing.PROPERTY_FIRMWARE_VERSION, device.getFirmwareVersion())
                 .withRepresentationProperty(Thing.PROPERTY_MODEL_ID).build();

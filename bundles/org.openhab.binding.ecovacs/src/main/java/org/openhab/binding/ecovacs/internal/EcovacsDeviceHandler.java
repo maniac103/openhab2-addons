@@ -87,10 +87,8 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             if (api != null) {
                 try {
                     String serial = getThing().getUID().getId();
-                    Optional<EcovacsDevice> device = api.getDevices()
-                            .stream()
-                            .filter(d -> serial.equals(d.getSerialNumber()))
-                            .findFirst();
+                    Optional<EcovacsDevice> device = api.getDevices().stream()
+                            .filter(d -> serial.equals(d.getSerialNumber())).findFirst();
                     if (device.isPresent()) {
                         this.device = device.get();
                         this.device.connect(this);
@@ -154,7 +152,6 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void onCleaningPowerChanged(EcovacsDevice device, SuctionPower newPower) {
-
     }
 
     private void updateStateAndCommandChannels() {
@@ -163,7 +160,8 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         }
         String commandState = determineCommandChannelValue();
         updateState(EcovacsBindingConstants.CHANNEL_ID_STATE, new StringType(determineStateChannelValue()));
-        updateState(EcovacsBindingConstants.CHANNEL_ID_COMMAND, commandState != null ? new StringType(commandState) : UnDefType.NULL);
+        updateState(EcovacsBindingConstants.CHANNEL_ID_COMMAND,
+                commandState != null ? new StringType(commandState) : UnDefType.NULL);
     }
 
     private String determineStateChannelValue() {
@@ -171,15 +169,24 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             return "charging";
         }
         switch (lastCleanMode) {
-            case AUTO: return "auto";
-            case EDGE: return "edge";
-            case SPOT: return "spot";
-            case SPOT_AREA: return "spotArea";
-            case CUSTOM_AREA: return "customArea";
-            case SINGLE_ROOM: return "singleRoom";
-            case PAUSE: return "pause";
-            case STOP: return "stop";
-            case RETURNING: return "returning";
+            case AUTO:
+                return "auto";
+            case EDGE:
+                return "edge";
+            case SPOT:
+                return "spot";
+            case SPOT_AREA:
+                return "spotArea";
+            case CUSTOM_AREA:
+                return "customArea";
+            case SINGLE_ROOM:
+                return "singleRoom";
+            case PAUSE:
+                return "pause";
+            case STOP:
+                return "stop";
+            case RETURNING:
+                return "returning";
         }
         return "";
     }
@@ -189,11 +196,16 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             return EcovacsBindingConstants.CMD_CHARGE;
         }
         switch (lastCleanMode) {
-            case AUTO: return EcovacsBindingConstants.CMD_AUTO_CLEAN;
-            case PAUSE: return EcovacsBindingConstants.CMD_PAUSE;
-            case STOP: return EcovacsBindingConstants.CMD_STOP;
-            case RETURNING: return EcovacsBindingConstants.CMD_CHARGE;
-            default: break;
+            case AUTO:
+                return EcovacsBindingConstants.CMD_AUTO_CLEAN;
+            case PAUSE:
+                return EcovacsBindingConstants.CMD_PAUSE;
+            case STOP:
+                return EcovacsBindingConstants.CMD_STOP;
+            case RETURNING:
+                return EcovacsBindingConstants.CMD_CHARGE;
+            default:
+                break;
         }
         return null;
     }
