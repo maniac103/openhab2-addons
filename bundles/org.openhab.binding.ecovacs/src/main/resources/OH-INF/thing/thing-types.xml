@@ -16,6 +16,8 @@
 			<channel id="state" typeId="state"/>
 			<channel id="command" typeId="command"/>
 			<channel id="battery" typeId="battery"/>
+			<channel id="cleaningTime" typeId="cleaningTime"/>
+			<channel id="cleanedArea" typeId="cleanedArea"/>
 		</channels>
 	</thing-type>
 
@@ -58,7 +60,20 @@
 		<item-type>Number:Dimensionless</item-type>
 		<label>Battery</label>
 		<description>Battery charge percentage</description>
-		<state readOnly="true"></state>
+		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
+	<channel-type id="cleaningTime">
+		<item-type>Number:Time</item-type>
+		<label>Cleaning time</label>
+		<description>Cleaning time in current clean cycle</description>
+		<state pattern="%d %unit%" readOnly="true"></state>
+	</channel-type>
+
+	<channel-type id="cleanedArea">
+		<item-type>Number:Area</item-type>
+		<label>Cleaned area</label>
+		<description>Cleaned area in current clean cycle</description>
+		<state pattern="%d %unit%" readOnly="true"></state>
+	</channel-type>
 </thing:thing-descriptions>

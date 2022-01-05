@@ -33,6 +33,8 @@ public class EcovacsBindingConstants {
     public static final String CHANNEL_ID_STATE = "state";
     public static final String CHANNEL_ID_COMMAND = "command";
     public static final String CHANNEL_ID_BATTERY_LEVEL = "battery";
+    public static final String CHANNEL_ID_CLEANING_TIME = "cleaningTime";
+    public static final String CHANNEL_ID_CLEANED_AREA = "cleanedArea";
 
     public static final String CMD_AUTO_CLEAN = "clean";
     public static final String CMD_PAUSE = "pause";
