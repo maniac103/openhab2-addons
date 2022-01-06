@@ -162,7 +162,6 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void onCleaningStatsChanged(EcovacsDevice device, int cleanedArea, int cleaningTimeSeconds) {
-        // FIXME: area unit probably depends on setting in app?
         updateState(EcovacsBindingConstants.CHANNEL_ID_CLEANED_AREA,
                 new QuantityType<>(cleanedArea, SIUnits.SQUARE_METRE));
         updateState(EcovacsBindingConstants.CHANNEL_ID_CLEANING_TIME,
@@ -174,9 +173,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         logger.debug(getThing().getUID() + ": Device connection failed, reconnecting", error);
         device.disconnect();
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-        if (reconnectFuture == null) {
-            scheduler.schedule(() -> connectToDevice(), 5, TimeUnit.SECONDS);
-        }
+        scheduleReconnection();
     }
 
     private void scheduleReconnection() {
