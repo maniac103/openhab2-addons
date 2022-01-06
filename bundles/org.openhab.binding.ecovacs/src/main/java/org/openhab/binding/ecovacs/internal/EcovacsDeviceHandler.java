@@ -36,9 +36,9 @@ import org.slf4j.LoggerFactory;
 import dev.pott.sucks.api.EcovacsApi;
 import dev.pott.sucks.api.EcovacsApiException;
 import dev.pott.sucks.api.EcovacsDevice;
-import dev.pott.sucks.api.dto.request.commands.GoChargingCommand;
-import dev.pott.sucks.api.dto.request.commands.StartCleaningCommand;
-import dev.pott.sucks.api.dto.request.commands.StopCommand;
+import dev.pott.sucks.api.commands.GoChargingCommand;
+import dev.pott.sucks.api.commands.StartCleaningCommand;
+import dev.pott.sucks.api.commands.StopCommand;
 import dev.pott.sucks.cleaner.CleanMode;
 import dev.pott.sucks.cleaner.SuctionPower;
 
