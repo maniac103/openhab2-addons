@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.SIUnits;
@@ -140,8 +141,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     @Override
     public void onBatteryLevelChanged(EcovacsDevice device, int newLevelPercent) {
         lastBatteryLevel = newLevelPercent;
-        updateState(EcovacsBindingConstants.CHANNEL_ID_BATTERY_LEVEL,
-                new QuantityType<>(newLevelPercent, Units.PERCENT));
+        updateState(EcovacsBindingConstants.CHANNEL_ID_BATTERY_LEVEL, new DecimalType(newLevelPercent));
     }
 
     @Override
