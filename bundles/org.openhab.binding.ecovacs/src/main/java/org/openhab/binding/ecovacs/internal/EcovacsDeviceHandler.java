@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.library.types.DecimalType;
+import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.SIUnits;
@@ -41,6 +42,7 @@ import dev.pott.sucks.api.commands.GoChargingCommand;
 import dev.pott.sucks.api.commands.StartCleaningCommand;
 import dev.pott.sucks.api.commands.StopCommand;
 import dev.pott.sucks.cleaner.CleanMode;
+import dev.pott.sucks.cleaner.MoppingWaterAmount;
 import dev.pott.sucks.cleaner.SuctionPower;
 
 /**
@@ -60,6 +62,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     private int lastBatteryLevel;
     private @Nullable Boolean lastWasCharging;
     private @Nullable CleanMode lastCleanMode;
+    private @Nullable Boolean lastWaterPlatePresent;
 
     public EcovacsDeviceHandler(Thing thing) {
         super(thing);
@@ -135,6 +138,9 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             case EcovacsBindingConstants.CHANNEL_ID_COMMAND:
                 updateStateAndCommandChannels();
                 break;
+            case EcovacsBindingConstants.CHANNEL_ID_WATER_PLATE_PRESENT:
+                onWaterSystemChanged(device, lastWaterPlatePresent, null);
+                break;
         }
     }
 
@@ -166,6 +172,12 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                 new QuantityType<>(cleanedArea, SIUnits.SQUARE_METRE));
         updateState(EcovacsBindingConstants.CHANNEL_ID_CLEANING_TIME,
                 new QuantityType<>(cleaningTimeSeconds, Units.SECOND));
+    }
+
+    @Override
+    public void onWaterSystemChanged(EcovacsDevice device, boolean present, MoppingWaterAmount amount) {
+        lastWaterPlatePresent = present;
+        updateState(EcovacsBindingConstants.CHANNEL_ID_WATER_PLATE_PRESENT, OnOffType.from(present));
     }
 
     @Override
