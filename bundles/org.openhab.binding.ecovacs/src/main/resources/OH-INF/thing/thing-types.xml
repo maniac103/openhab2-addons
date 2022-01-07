@@ -18,6 +18,7 @@
 			<channel id="battery" typeId="system.battery-level"/>
 			<channel id="cleaningTime" typeId="cleaningTime"/>
 			<channel id="cleanedArea" typeId="cleanedArea"/>
+			<channel id="waterPlatePresent" typeId="waterPlatePresent"/>
 		</channels>
 	</thing-type>
 
@@ -68,5 +69,12 @@
 		<label>Cleaned area</label>
 		<description>Cleaned area in current clean cycle</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
+	</channel-type>
+
+	<channel-type id="waterPlatePresent">
+		<item-type>Switch</item-type>
+		<label>Water plate present</label>
+		<description>Water plate with mop attached to device?</description>
+		<state readOnly="true"/>
 	</channel-type>
 </thing:thing-descriptions>
