@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+import dev.pott.sucks.api.ClientKeys;
 import dev.pott.sucks.api.EcovacsApi;
 import dev.pott.sucks.api.EcovacsApiConfiguration;
 import dev.pott.sucks.api.EcovacsApiException;
@@ -48,7 +49,7 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
 
     private @Nullable EcovacsDeviceDiscoveryService discoveryService;
     private @Nullable EcovacsApi api;
-    private HttpClientFactory httpClientFactory;
+    private final HttpClientFactory httpClientFactory;
 
     public EcovacsApiHandler(Bridge bridge, HttpClientFactory httpClientFactory) {
         super(bridge);
@@ -99,7 +100,8 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
                     MD5Util.getMD5Hash(String.valueOf(System.currentTimeMillis())), // FIXME: unique install ID
                     config.email, config.password,
                     // FIXME: can get this from locale?
-                    "EU", "DE", "EN");
+                    "EU", "DE", "EN", ClientKeys.CLIENT_KEY, ClientKeys.CLIENT_SECRET, ClientKeys.AUTH_CLIENT_KEY,
+                    ClientKeys.AUTH_CLIENT_SECRET);
 
             EcovacsApi api = new EcovacsApi(httpClientFactory.getCommonHttpClient(), new Gson(), apiConfig);
             try {
