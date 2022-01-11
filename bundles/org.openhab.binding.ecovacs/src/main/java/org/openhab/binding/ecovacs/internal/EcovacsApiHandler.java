@@ -29,13 +29,11 @@ import org.openhab.core.types.RefreshType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-
 import dev.pott.sucks.api.ClientKeys;
 import dev.pott.sucks.api.EcovacsApi;
 import dev.pott.sucks.api.EcovacsApiConfiguration;
 import dev.pott.sucks.api.EcovacsApiException;
-import dev.pott.sucks.util.MD5Util;
+import dev.pott.sucks.api.util.MD5Util;
 
 /**
  * The {@link EcovacsDeviceHandler} is responsible for handling commands, which are
@@ -103,7 +101,7 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
                     "EU", "DE", "EN", ClientKeys.CLIENT_KEY, ClientKeys.CLIENT_SECRET, ClientKeys.AUTH_CLIENT_KEY,
                     ClientKeys.AUTH_CLIENT_SECRET);
 
-            EcovacsApi api = new EcovacsApi(httpClientFactory.getCommonHttpClient(), new Gson(), apiConfig);
+            EcovacsApi api = EcovacsApi.create(httpClientFactory.getCommonHttpClient(), apiConfig);
             try {
                 api.loginAndGetAccessToken();
                 this.api = api;

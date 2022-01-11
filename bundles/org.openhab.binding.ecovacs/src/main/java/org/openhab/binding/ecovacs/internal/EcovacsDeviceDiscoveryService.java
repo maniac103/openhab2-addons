@@ -117,8 +117,6 @@ public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService impl
     }
 
     private void deviceDiscovered(EcovacsDevice device) {
-        // TODO: check whether device actually is a vacuum cleaner - how?
-
         ThingUID thingUID = new ThingUID(EcovacsBindingConstants.THING_TYPE_VACUUM, apiHandler.getThing().getUID(),
                 device.getSerialNumber());
         DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID)

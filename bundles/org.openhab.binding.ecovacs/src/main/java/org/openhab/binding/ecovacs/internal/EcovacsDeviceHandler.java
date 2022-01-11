@@ -39,8 +39,8 @@ import dev.pott.sucks.api.EcovacsApi;
 import dev.pott.sucks.api.EcovacsApiException;
 import dev.pott.sucks.api.EcovacsDevice;
 import dev.pott.sucks.api.commands.GoChargingCommand;
-import dev.pott.sucks.api.commands.StartCleaningCommand;
-import dev.pott.sucks.api.commands.StopCommand;
+import dev.pott.sucks.api.commands.StartAutoCleaningCommand;
+import dev.pott.sucks.api.commands.StopCleaningCommand;
 import dev.pott.sucks.cleaner.CleanMode;
 import dev.pott.sucks.cleaner.MoppingWaterAmount;
 import dev.pott.sucks.cleaner.SuctionPower;
@@ -63,6 +63,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     private @Nullable Boolean lastWasCharging;
     private @Nullable CleanMode lastCleanMode;
     private @Nullable Boolean lastWaterPlatePresent;
+    private @Nullable MoppingWaterAmount lastMoppingWaterAmount;
 
     public EcovacsDeviceHandler(Thing thing) {
         super(thing);
@@ -138,9 +139,13 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             case EcovacsBindingConstants.CHANNEL_ID_COMMAND:
                 updateStateAndCommandChannels();
                 break;
-            case EcovacsBindingConstants.CHANNEL_ID_WATER_PLATE_PRESENT:
-                onWaterSystemChanged(device, lastWaterPlatePresent, null);
+            case EcovacsBindingConstants.CHANNEL_ID_WATER_PLATE_PRESENT: {
+                final MoppingWaterAmount amount = lastMoppingWaterAmount;
+                if (amount != null) {
+                    onWaterSystemChanged(device, lastWaterPlatePresent, amount);
+                }
                 break;
+            }
         }
     }
 
@@ -177,6 +182,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     @Override
     public void onWaterSystemChanged(EcovacsDevice device, boolean present, MoppingWaterAmount amount) {
         lastWaterPlatePresent = present;
+        lastMoppingWaterAmount = amount;
         updateState(EcovacsBindingConstants.CHANNEL_ID_WATER_PLATE_PRESENT, OnOffType.from(present));
     }
 
@@ -282,10 +288,10 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
         switch (command) {
             case EcovacsBindingConstants.CMD_AUTO_CLEAN:
-                device.sendCommand(new StartCleaningCommand());
+                device.sendCommand(new StartAutoCleaningCommand());
                 break;
             case EcovacsBindingConstants.CMD_STOP:
-                device.sendCommand(new StopCommand());
+                device.sendCommand(new StopCleaningCommand());
                 break;
             case EcovacsBindingConstants.CMD_CHARGE:
                 device.sendCommand(new GoChargingCommand());
