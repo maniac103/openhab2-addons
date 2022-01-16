@@ -16,10 +16,17 @@
 			<channel id="state" typeId="state"/>
 			<channel id="command" typeId="command"/>
 			<channel id="battery" typeId="system.battery-level"/>
-			<channel id="cleaningTime" typeId="cleaningTime"/>
-			<channel id="cleanedArea" typeId="cleanedArea"/>
-			<channel id="waterPlatePresent" typeId="waterPlatePresent"/>
+			<channel id="current-cleaning-time" typeId="cleaning-time"/>
+			<channel id="current-cleaned-area" typeId="cleaned-area"/>
+			<channel id="water-system-present" typeId="water-system-present"/>
+			<!-- TODO: error, water amount, power level, Wifi RSSI?, clean passes for spot, rooms for spot (with type?), brush life
+				spans?, dnd?, voice volume -->
+			<!-- TODO: total clean area, time, count -->
 		</channels>
+
+		<config-description>
+			<!-- TODO: refresh time for polled data [settings, total stats, life spans, room mapping] -->
+		</config-description>
 	</thing-type>
 
 	<channel-type id="state">
@@ -50,6 +57,7 @@
 		<state>
 			<options>
 				<option value="clean">Automatic cleaning</option>
+				<!-- TODO: support spot -->
 				<option value="pause">Pause</option>
 				<option value="stop">Stop</option>
 				<option value="charge">Go to charge station</option>
@@ -57,23 +65,23 @@
 		</state>
 	</channel-type>
 
-	<channel-type id="cleaningTime">
+	<channel-type id="cleaning-time">
 		<item-type>Number:Time</item-type>
 		<label>Cleaning time</label>
 		<description>Cleaning time in current clean cycle</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
-	<channel-type id="cleanedArea">
+	<channel-type id="cleaned-area">
 		<item-type>Number:Area</item-type>
 		<label>Cleaned area</label>
 		<description>Cleaned area in current clean cycle</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
-	<channel-type id="waterPlatePresent">
+	<channel-type id="water-system-resent">
 		<item-type>Switch</item-type>
-		<label>Water plate present</label>
+		<label>Water system present</label>
 		<description>Water plate with mop attached to device?</description>
 		<state readOnly="true"/>
 	</channel-type>
