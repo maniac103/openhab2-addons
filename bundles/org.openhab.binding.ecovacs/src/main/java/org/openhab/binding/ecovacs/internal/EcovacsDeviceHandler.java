@@ -42,6 +42,7 @@ import dev.pott.sucks.api.commands.GoChargingCommand;
 import dev.pott.sucks.api.commands.StartAutoCleaningCommand;
 import dev.pott.sucks.api.commands.StopCleaningCommand;
 import dev.pott.sucks.cleaner.CleanMode;
+import dev.pott.sucks.cleaner.ErrorDescription;
 import dev.pott.sucks.cleaner.MoppingWaterAmount;
 import dev.pott.sucks.cleaner.SuctionPower;
 
@@ -184,6 +185,11 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         lastWaterPlatePresent = present;
         lastMoppingWaterAmount = amount;
         updateState(EcovacsBindingConstants.CHANNEL_ID_WATER_PLATE_PRESENT, OnOffType.from(present));
+    }
+
+    @Override
+    public void onErrorReported(EcovacsDevice device, ErrorDescription error) {
+        // TODO
     }
 
     @Override
