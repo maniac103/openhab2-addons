@@ -12,30 +12,14 @@
 		<label>Ecovacs Vaccum Cleaner</label>
 		<description>Represents an Ecovacs vacuum cleaner</description>
 
-		<channels>
-			<channel id="state" typeId="state"/>
-			<channel id="command" typeId="command"/>
-			<channel id="battery" typeId="system.battery-level"/>
-			<channel id="current-cleaning-time" typeId="cleaning-time"/>
-			<channel id="current-cleaned-area" typeId="cleaned-area"/>
-			<channel id="water-system-present" typeId="water-system-present"/>
-			<channel id="water-amount" typeId="water-amount"/>
-			<channel id="total-cleaning-time" typeId="total-cleaning-time"/>
-			<channel id="total-cleaned-area" typeId="total-cleaned-area"/>
-			<channel id="total-clean-runs" typeId="total-clean-runs"/>
-			<channel id="last-clean-start" typeId="last-clean-start"/>
-			<channel id="last-clean-duration" typeId="last-clean-duration"/>
-			<channel id="last-clean-area" typeId="last-clean-area"/>
-			<channel id="last-clean-mode" typeId="last-clean-mode"/>
-			<channel id="last-clean-map" typeId="last-clean-map"/>
-			<channel id="suction-power" typeId="suction-power"/>
-			<channel id="wifi-rssi" typeId="wifi-rssi"/>
-			<channel id="main-brush-lifetime" typeId="main-brush-lifetime"/>
-			<channel id="side-brush-lifetime" typeId="side-brush-lifetime"/>
-			<channel id="dust-filter-lifetime" typeId="dust-filter-lifetime"/>
-			<channel id="voice-volume" typeId="voice-volume"/>
+		<channel-groups>
+			<channel-group id="actions" typeId="actions"/>
+			<channel-group id="status" typeId="status"/>
+			<channel-group id="last-clean" typeId="last-clean"/>
+			<channel-group id="consumables" typeId="consumables"/>
+			<channel-group id="settings" typeId="settings"/>
 			<!-- TODO: error, clean passes for spot, rooms for spot (with type?), dnd? -->
-		</channels>
+		</channel-groups>
 
 		<config-description>
 			<parameter name="refresh" type="integer" unit="min" min="1" required="false">
@@ -47,6 +31,63 @@
 			</parameter>
 		</config-description>
 	</thing-type>
+
+	<channel-group-type id="status">
+		<label>Status</label>
+		<channels>
+			<channel id="state" typeId="state"/>
+			<channel id="battery" typeId="system.battery-level"/>
+			<channel id="current-cleaning-time" typeId="cleaning-time"/>
+			<channel id="current-cleaned-area" typeId="cleaned-area"/>
+			<channel id="water-system-present" typeId="water-system-present"/>
+			<channel id="wifi-rssi" typeId="wifi-rssi"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="actions">
+		<label>Actions</label>
+		<channels>
+			<channel id="command" typeId="command"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="total-stats">
+		<label>Device lifetime statistics</label>
+		<channels>
+			<channel id="total-cleaning-time" typeId="total-cleaning-time"/>
+			<channel id="total-cleaned-area" typeId="total-cleaned-area"/>
+			<channel id="total-clean-runs" typeId="total-clean-runs"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="last-clean">
+		<label>Last clean run</label>
+		<channels>
+			<channel id="last-clean-start" typeId="last-clean-start"/>
+			<channel id="last-clean-duration" typeId="last-clean-duration"/>
+			<channel id="last-clean-area" typeId="last-clean-area"/>
+			<channel id="last-clean-mode" typeId="last-clean-mode"/>
+			<channel id="last-clean-map" typeId="last-clean-map"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="consumables">
+		<label>Consumables</label>
+		<channels>
+			<channel id="main-brush-lifetime" typeId="main-brush-lifetime"/>
+			<channel id="side-brush-lifetime" typeId="side-brush-lifetime"/>
+			<channel id="dust-filter-lifetime" typeId="dust-filter-lifetime"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="settings">
+		<label>Settings</label>
+		<channels>
+			<channel id="water-amount" typeId="water-amount"/>
+			<channel id="suction-power" typeId="suction-power"/>
+			<channel id="voice-volume" typeId="voice-volume"/>
+		</channels>
+	</channel-group-type>
 
 	<channel-type id="state">
 		<item-type>String</item-type>
