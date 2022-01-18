@@ -106,6 +106,7 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
                 this.api = api;
                 updateStatus(ThingStatus.ONLINE);
 
+                logger.debug("Ecovacs API initialized");
                 final EcovacsDeviceDiscoveryService discoveryService = this.discoveryService;
                 if (discoveryService != null) {
                     discoveryService.startScan();

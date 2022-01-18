@@ -95,7 +95,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     public void handleCommand(ChannelUID channelUID, Command command) {
         final EcovacsDevice device = this.device;
         if (device == null) {
-            logger.debug("Ignoring command {} for {}, no active connection", command, getThing().getUID());
+            logger.debug("{}: Ignoring command {}, no active connection", getDeviceSerial(), command);
             return;
         }
         String channel = channelUID.getId();
@@ -126,15 +126,15 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                     return;
                 }
             }
-            logger.debug("Ignoring unsupported device command {}", command);
+            logger.debug("{}: Ignoring unsupported device command {}", getDeviceSerial(), command);
         } catch (EcovacsApiException e) {
-            logger.debug("Handling device command " + command + " failed", e);
+            logger.debug(getDeviceSerial() + ": Handling device command " + command + " failed", e);
         }
     }
 
     @Override
     public void initialize() {
-        updateStatus(ThingStatus.UNKNOWN);
+        logger.debug("{}: Initializing handler", getDeviceSerial());
         scheduler.execute(() -> {
             final Bridge bridge = getBridge();
             final EcovacsApiHandler handler = bridge != null ? (EcovacsApiHandler) bridge.getHandler() : null;
@@ -146,13 +146,14 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             }
 
             try {
-                String serial = getThing().getUID().getId();
+                String serial = getDeviceSerial();
                 Optional<EcovacsDevice> device = api.getDevices().stream()
                         .filter(d -> serial.equals(d.getSerialNumber())).findFirst();
                 if (device.isPresent()) {
                     this.device = device.get();
                     connectToDevice();
                 } else {
+                    logger.info("{}: Device not found in device list, setting offline", serial);
                     updateStatus(ThingStatus.OFFLINE);
                 }
             } catch (EcovacsApiException e) {
@@ -163,6 +164,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void dispose() {
+        logger.debug("{}: Disposing handler", getDeviceSerial());
         super.dispose();
         EcovacsDevice device = this.device;
         if (device != null) {
@@ -198,7 +200,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                 break;
             }
             default:
-                startPolling();
+                startPolling(5); // add some delay in case multiple channels are linked at once
                 break;
         }
     }
@@ -220,7 +222,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         lastCleanMode = newMode;
         updateStateAndCommandChannels();
         if (newMode == CleanMode.RETURNING) {
-            scheduler.schedule(this::pollData, 30, TimeUnit.SECONDS);
+            startPolling(30);
         } else if (newMode == CleanMode.IDLE) {
             updateState(EcovacsBindingConstants.CHANNEL_ID_CLEANED_AREA, UnDefType.UNDEF);
             updateState(EcovacsBindingConstants.CHANNEL_ID_CLEANING_TIME, UnDefType.UNDEF);
@@ -253,20 +255,24 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void onDeviceConnectionFailed(final EcovacsDevice device, Throwable error) {
-        logger.debug(getThing().getUID() + ": Device connection failed, reconnecting", error);
+        logger.debug(getDeviceSerial() + ": Device connection failed, reconnecting", error);
         device.disconnect();
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+        stopPolling();
         scheduleReconnection();
     }
 
-    private void startPolling() {
+    private synchronized void startPolling(long initialDelaySeconds) {
         stopPolling();
 
         final EcovacsDeviceConfiguration config = getConfigAs(EcovacsDeviceConfiguration.class);
-        pollFuture = scheduler.scheduleAtFixedRate(this::pollData, 0, config.refresh, TimeUnit.MINUTES);
+        logger.debug("{}: Scheduling next poll in {}s, refresh interval {}min", getDeviceSerial(), initialDelaySeconds,
+                config.refresh);
+        pollFuture = scheduler.scheduleWithFixedDelay(this::pollData, initialDelaySeconds, config.refresh * 60,
+                TimeUnit.SECONDS);
     }
 
-    private void stopPolling() {
+    private synchronized void stopPolling() {
         final ScheduledFuture<?> pollFuture = this.pollFuture;
         if (pollFuture != null) {
             pollFuture.cancel(true);
@@ -274,7 +280,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         }
     }
 
-    private void scheduleReconnection() {
+    private synchronized void scheduleReconnection() {
         if (reconnectFuture == null) {
             reconnectFuture = scheduler.schedule(() -> {
                 reconnectFuture = null;
@@ -286,12 +292,14 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     private void connectToDevice() {
         doWithDevice(device -> {
             device.connect(this);
+            logger.debug("{}: Device connected", getDeviceSerial());
             updateStatus(ThingStatus.ONLINE);
-            startPolling();
+            startPolling(0);
         });
     }
 
     private void pollData() {
+        logger.debug("{}: Polling data", getDeviceSerial());
         doWithDevice(device -> {
             TotalStats totalStats = device.sendCommand(new GetTotalStatsCommand());
             updateState(EcovacsBindingConstants.CHANNEL_ID_TOTAL_CLEANED_AREA,
@@ -350,6 +358,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                 updateState(EcovacsBindingConstants.CHANNEL_ID_VOICE_VOLUME, new PercentType(level * 10));
             }
         });
+        logger.debug("{}: Data polling completed", getDeviceSerial());
     }
 
     private void updateStateAndCommandChannels() {
@@ -421,8 +430,9 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             if (e.getCause() instanceof InterruptedException) {
                 return;
             }
-            logger.debug(getThing().getUID() + ": Failed communicating to device, reconnecting", e);
+            logger.debug(getDeviceSerial() + ": Failed communicating to device, reconnecting", e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+            stopPolling();
             scheduleReconnection();
         }
     }
@@ -430,5 +440,9 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     private <T> @Nullable T findMappedEnumValue(Map<T, String> mapping, String value) {
         return mapping.entrySet().stream().filter(entry -> entry.getValue().equals(value)).map(entry -> entry.getKey())
                 .findFirst().get();
+    }
+
+    private String getDeviceSerial() {
+        return getThing().getUID().getId();
     }
 }
