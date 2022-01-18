@@ -16,6 +16,7 @@
 			<channel-group id="actions" typeId="actions"/>
 			<channel-group id="status" typeId="status"/>
 			<channel-group id="last-clean" typeId="last-clean"/>
+			<channel-group id="total-stats" typeId="total-stats"/>
 			<channel-group id="consumables" typeId="consumables"/>
 			<channel-group id="settings" typeId="settings"/>
 			<!-- TODO: error, clean passes for spot, rooms for spot (with type?), dnd? -->
