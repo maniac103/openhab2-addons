@@ -418,6 +418,9 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         try {
             action.run(device);
         } catch (EcovacsApiException e) {
+            if (e.getCause() instanceof InterruptedException) {
+                return;
+            }
             logger.debug(getThing().getUID() + ": Failed communicating to device, reconnecting", e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
             scheduleReconnection();
