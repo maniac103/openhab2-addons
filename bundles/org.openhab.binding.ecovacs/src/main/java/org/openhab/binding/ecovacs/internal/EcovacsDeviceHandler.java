@@ -12,15 +12,21 @@
  */
 package org.openhab.binding.ecovacs.internal;
 
+import java.time.ZoneId;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.core.library.types.DateTimeType;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
+import org.openhab.core.library.types.PercentType;
 import org.openhab.core.library.types.QuantityType;
+import org.openhab.core.library.types.RawType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
@@ -38,12 +44,26 @@ import org.slf4j.LoggerFactory;
 import dev.pott.sucks.api.EcovacsApi;
 import dev.pott.sucks.api.EcovacsApiException;
 import dev.pott.sucks.api.EcovacsDevice;
+import dev.pott.sucks.api.commands.GetComponentLifeSpanCommand;
+import dev.pott.sucks.api.commands.GetMoppingWaterAmountCommand;
+import dev.pott.sucks.api.commands.GetNetworkInfoCommand;
+import dev.pott.sucks.api.commands.GetSuctionPowerCommand;
+import dev.pott.sucks.api.commands.GetTotalStatsCommand;
+import dev.pott.sucks.api.commands.GetTotalStatsCommand.TotalStats;
+import dev.pott.sucks.api.commands.GetVolumeCommand;
 import dev.pott.sucks.api.commands.GoChargingCommand;
+import dev.pott.sucks.api.commands.SetMoppingWaterAmountCommand;
+import dev.pott.sucks.api.commands.SetSuctionPowerCommand;
+import dev.pott.sucks.api.commands.SetVolumeCommand;
 import dev.pott.sucks.api.commands.StartAutoCleaningCommand;
 import dev.pott.sucks.api.commands.StopCleaningCommand;
+import dev.pott.sucks.cleaner.CleanLogRecord;
 import dev.pott.sucks.cleaner.CleanMode;
+import dev.pott.sucks.cleaner.Component;
+import dev.pott.sucks.cleaner.DeviceCapability;
 import dev.pott.sucks.cleaner.ErrorDescription;
 import dev.pott.sucks.cleaner.MoppingWaterAmount;
+import dev.pott.sucks.cleaner.NetworkInfo;
 import dev.pott.sucks.cleaner.SuctionPower;
 
 /**
@@ -58,6 +78,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     private final Logger logger = LoggerFactory.getLogger(EcovacsDeviceHandler.class);
 
     private @Nullable ScheduledFuture<?> reconnectFuture;
+    private @Nullable ScheduledFuture<?> pollFuture;
     private @Nullable EcovacsDevice device;
 
     private int lastBatteryLevel;
@@ -72,14 +93,42 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
+        final EcovacsDevice device = this.device;
+        if (device == null) {
+            logger.debug("Ignoring command {} for {}, no active connection", command, getThing().getUID());
+            return;
+        }
         String channel = channelUID.getId();
 
-        if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_COMMAND) && command instanceof StringType) {
-            try {
-                handleDeviceCommand(command.toString());
-            } catch (EcovacsApiException e) {
-                logger.debug("Handling device command " + command + " failed", e);
+        try {
+            if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_COMMAND) && command instanceof StringType) {
+                handleDeviceCommand(device, command.toString());
+                return;
+            } else if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_VOICE_VOLUME) && command instanceof DecimalType
+                    && device.hasCapability(DeviceCapability.VOICE_REPORTING)) {
+                int volumePercent = ((DecimalType) command).intValue();
+                device.sendCommand(new SetVolumeCommand((volumePercent + 5) / 10));
+                return;
+            } else if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_SUCTION_POWER) && command instanceof StringType
+                    && device.hasCapability(DeviceCapability.CLEAN_SPEED_CONTROL)) {
+                SuctionPower power = findMappedEnumValue(EcovacsBindingConstants.SUCTION_POWER_MAPPING,
+                        command.toString());
+                if (power != null) {
+                    device.sendCommand(new SetSuctionPowerCommand(power));
+                    return;
+                }
+            } else if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_WATER_AMOUNT) && command instanceof StringType
+                    && device.hasCapability(DeviceCapability.MOPPING_SYSTEM)) {
+                MoppingWaterAmount amount = findMappedEnumValue(EcovacsBindingConstants.WATER_AMOUNT_MAPPING,
+                        command.toString());
+                if (amount != null) {
+                    device.sendCommand(new SetMoppingWaterAmountCommand(amount));
+                    return;
+                }
             }
+            logger.debug("Ignoring unsupported device command {}", command);
+        } catch (EcovacsApiException e) {
+            logger.debug("Handling device command " + command + " failed", e);
         }
     }
 
@@ -123,6 +172,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         if (reconnectFuture != null) {
             reconnectFuture.cancel(true);
         }
+        stopPolling();
     }
 
     @Override
@@ -147,6 +197,9 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                 }
                 break;
             }
+            default:
+                startPolling();
+                break;
         }
     }
 
@@ -166,6 +219,12 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     public void onCleaningModeChanged(EcovacsDevice device, CleanMode newMode) {
         lastCleanMode = newMode;
         updateStateAndCommandChannels();
+        if (newMode == CleanMode.RETURNING) {
+            scheduler.schedule(this::pollData, 30, TimeUnit.SECONDS);
+        } else if (newMode == CleanMode.IDLE) {
+            updateState(EcovacsBindingConstants.CHANNEL_ID_CLEANED_AREA, UnDefType.UNDEF);
+            updateState(EcovacsBindingConstants.CHANNEL_ID_CLEANING_TIME, UnDefType.UNDEF);
+        }
     }
 
     @Override
@@ -200,6 +259,21 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         scheduleReconnection();
     }
 
+    private void startPolling() {
+        stopPolling();
+
+        final EcovacsDeviceConfiguration config = getConfigAs(EcovacsDeviceConfiguration.class);
+        pollFuture = scheduler.scheduleAtFixedRate(this::pollData, 0, config.refresh, TimeUnit.MINUTES);
+    }
+
+    private void stopPolling() {
+        final ScheduledFuture<?> pollFuture = this.pollFuture;
+        if (pollFuture != null) {
+            pollFuture.cancel(true);
+            this.pollFuture = null;
+        }
+    }
+
     private void scheduleReconnection() {
         if (reconnectFuture == null) {
             reconnectFuture = scheduler.schedule(() -> {
@@ -210,18 +284,72 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     }
 
     private void connectToDevice() {
-        EcovacsDevice device = this.device;
-        if (device == null) {
-            return;
-        }
-        try {
+        doWithDevice(device -> {
             device.connect(this);
             updateStatus(ThingStatus.ONLINE);
-        } catch (EcovacsApiException e) {
-            logger.debug(getThing().getUID() + ": Could not establish device connection, reconnecting", e);
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-            scheduleReconnection();
-        }
+            startPolling();
+        });
+    }
+
+    private void pollData() {
+        doWithDevice(device -> {
+            TotalStats totalStats = device.sendCommand(new GetTotalStatsCommand());
+            updateState(EcovacsBindingConstants.CHANNEL_ID_TOTAL_CLEANED_AREA,
+                    new QuantityType<>(totalStats.totalArea, SIUnits.SQUARE_METRE));
+            updateState(EcovacsBindingConstants.CHANNEL_ID_TOTAL_CLEANING_TIME,
+                    new QuantityType<>(totalStats.totalRuntime, Units.SECOND));
+            updateState(EcovacsBindingConstants.CHANNEL_ID_TOTAL_CLEAN_RUNS, new DecimalType(totalStats.cleanRuns));
+
+            List<CleanLogRecord> lastCleanRecord = device.getCleanLogs(1);
+            if (!lastCleanRecord.isEmpty()) {
+                CleanLogRecord record = lastCleanRecord.get(0);
+                updateState(EcovacsBindingConstants.CHANNEL_ID_LAST_CLEAN_START,
+                        new DateTimeType(record.timestamp.toInstant().atZone(ZoneId.systemDefault())));
+                updateState(EcovacsBindingConstants.CHANNEL_ID_LAST_CLEAN_DURATION,
+                        new QuantityType<>(record.cleaningDuration, Units.SECOND));
+                updateState(EcovacsBindingConstants.CHANNEL_ID_LAST_CLEAN_AREA,
+                        new QuantityType<>(record.cleanedArea, SIUnits.SQUARE_METRE));
+                updateState(EcovacsBindingConstants.CHANNEL_ID_LAST_CLEAN_MODE,
+                        new StringType(EcovacsBindingConstants.CLEAN_MODE_MAPPING.get(record.mode)));
+                updateState(EcovacsBindingConstants.CHANNEL_ID_LAST_CLEAN_MAP,
+                        new RawType(record.mapImagePngData, "image/png"));
+            }
+
+            if (device.hasCapability(DeviceCapability.CLEAN_SPEED_CONTROL)) {
+                SuctionPower power = device.sendCommand(new GetSuctionPowerCommand());
+                updateState(EcovacsBindingConstants.CHANNEL_ID_SUCTION_POWER,
+                        new StringType(EcovacsBindingConstants.SUCTION_POWER_MAPPING.get(power)));
+            }
+
+            if (device.hasCapability(DeviceCapability.MOPPING_SYSTEM)) {
+                MoppingWaterAmount waterAmount = device.sendCommand(new GetMoppingWaterAmountCommand());
+                updateState(EcovacsBindingConstants.CHANNEL_ID_WATER_AMOUNT,
+                        new StringType(EcovacsBindingConstants.WATER_AMOUNT_MAPPING.get(waterAmount)));
+            }
+
+            NetworkInfo netInfo = device.sendCommand(new GetNetworkInfoCommand());
+            if (netInfo.wifiRssi != 0) {
+                updateState(EcovacsBindingConstants.CHANNEL_ID_WIFI_RSSI,
+                        new QuantityType<>(netInfo.wifiRssi, Units.DECIBEL_MILLIWATTS));
+            }
+
+            int sideBrushPercent = device.sendCommand(new GetComponentLifeSpanCommand(Component.SIDE_BRUSH));
+            updateState(EcovacsBindingConstants.CHANNEL_ID_SIDE_BRUSH_LIFETIME,
+                    new QuantityType<>(sideBrushPercent, Units.PERCENT));
+            int filterPercent = device.sendCommand(new GetComponentLifeSpanCommand(Component.DUST_CASE_HEAP));
+            updateState(EcovacsBindingConstants.CHANNEL_ID_DUST_FILTER_LIFETIME,
+                    new QuantityType<>(filterPercent, Units.PERCENT));
+
+            if (device.hasCapability(DeviceCapability.MAIN_BRUSH)) {
+                int mainBrushPercent = device.sendCommand(new GetComponentLifeSpanCommand(Component.BRUSH));
+                updateState(EcovacsBindingConstants.CHANNEL_ID_MAIN_BRUSH_LIFETIME,
+                        new QuantityType<>(mainBrushPercent, Units.PERCENT));
+            }
+            if (device.hasCapability(DeviceCapability.VOICE_REPORTING)) {
+                int level = device.sendCommand(new GetVolumeCommand());
+                updateState(EcovacsBindingConstants.CHANNEL_ID_VOICE_VOLUME, new PercentType(level * 10));
+            }
+        });
     }
 
     private void updateStateAndCommandChannels() {
@@ -238,32 +366,11 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     }
 
     private String determineStateChannelValue(boolean charging, CleanMode cleanMode) {
-        if (charging) {
+        if (charging && cleanMode != CleanMode.RETURNING) {
             return "charging";
         }
-        switch (cleanMode) {
-            case AUTO:
-                return "auto";
-            case EDGE:
-                return "edge";
-            case SPOT:
-                return "spot";
-            case SPOT_AREA:
-                return "spotArea";
-            case CUSTOM_AREA:
-                return "customArea";
-            case SINGLE_ROOM:
-                return "singleRoom";
-            case PAUSE:
-                return "pause";
-            case STOP:
-                return "stop";
-            case RETURNING:
-                return "returning";
-            case IDLE:
-                break;
-        }
-        return "";
+        String result = EcovacsBindingConstants.CLEAN_MODE_MAPPING.get(cleanMode);
+        return result != null ? result : "";
     }
 
     private @Nullable String determineCommandChannelValue(boolean charging, CleanMode cleanMode) {
@@ -285,13 +392,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         return null;
     }
 
-    private void handleDeviceCommand(String command) throws EcovacsApiException {
-        final EcovacsDevice device = this.device;
-        if (device == null) {
-            logger.debug("Ignoring command {} for {}, no active connection", command, getThing().getUID());
-            return;
-        }
-
+    private void handleDeviceCommand(EcovacsDevice device, String command) throws EcovacsApiException {
         switch (command) {
             case EcovacsBindingConstants.CMD_AUTO_CLEAN:
                 device.sendCommand(new StartAutoCleaningCommand());
@@ -303,5 +404,28 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                 device.sendCommand(new GoChargingCommand());
                 break;
         }
+    }
+
+    private interface WithDeviceAction {
+        void run(EcovacsDevice device) throws EcovacsApiException;
+    }
+
+    private void doWithDevice(WithDeviceAction action) {
+        EcovacsDevice device = this.device;
+        if (device == null) {
+            return;
+        }
+        try {
+            action.run(device);
+        } catch (EcovacsApiException e) {
+            logger.debug(getThing().getUID() + ": Failed communicating to device, reconnecting", e);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+            scheduleReconnection();
+        }
+    }
+
+    private <T> @Nullable T findMappedEnumValue(Map<T, String> mapping, String value) {
+        return mapping.entrySet().stream().filter(entry -> entry.getValue().equals(value)).map(entry -> entry.getKey())
+                .findFirst().get();
     }
 }

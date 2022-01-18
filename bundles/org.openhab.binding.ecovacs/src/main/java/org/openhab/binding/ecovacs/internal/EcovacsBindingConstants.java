@@ -12,8 +12,15 @@
  */
 package org.openhab.binding.ecovacs.internal;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.core.thing.ThingTypeUID;
+
+import dev.pott.sucks.cleaner.CleanMode;
+import dev.pott.sucks.cleaner.MoppingWaterAmount;
+import dev.pott.sucks.cleaner.SuctionPower;
 
 /**
  * The {@link EcovacsBindingConstants} class defines common constants, which are
@@ -30,15 +37,62 @@ public class EcovacsBindingConstants {
     public static final ThingTypeUID THING_TYPE_VACUUM = new ThingTypeUID(BINDING_ID, "vacuum");
 
     // List of all channel UIDs
-    public static final String CHANNEL_ID_STATE = "state";
-    public static final String CHANNEL_ID_COMMAND = "command";
     public static final String CHANNEL_ID_BATTERY_LEVEL = "battery";
     public static final String CHANNEL_ID_CLEANING_TIME = "cleaning-time";
     public static final String CHANNEL_ID_CLEANED_AREA = "cleaned-area";
+    public static final String CHANNEL_ID_COMMAND = "command";
+    public static final String CHANNEL_ID_DUST_FILTER_LIFETIME = "dust-filter-lifetime";
+    public static final String CHANNEL_ID_LAST_CLEAN_START = "last-clean-start";
+    public static final String CHANNEL_ID_LAST_CLEAN_DURATION = "last-clean-duration";
+    public static final String CHANNEL_ID_LAST_CLEAN_AREA = "last-clean-area";
+    public static final String CHANNEL_ID_LAST_CLEAN_MODE = "last-clean-mode";
+    public static final String CHANNEL_ID_LAST_CLEAN_MAP = "last-clean-map";
+    public static final String CHANNEL_ID_MAIN_BRUSH_LIFETIME = "main-brush-lifetime";
+    public static final String CHANNEL_ID_SIDE_BRUSH_LIFETIME = "side-brush-lifetime";
+    public static final String CHANNEL_ID_STATE = "state";
+    public static final String CHANNEL_ID_SUCTION_POWER = "suction-power";
+    public static final String CHANNEL_ID_TOTAL_CLEANING_TIME = "total-cleaning-time";
+    public static final String CHANNEL_ID_TOTAL_CLEANED_AREA = "total-cleaned-area";
+    public static final String CHANNEL_ID_TOTAL_CLEAN_RUNS = "total-clean-runs";
+    public static final String CHANNEL_ID_VOICE_VOLUME = "voice-volume";
     public static final String CHANNEL_ID_WATER_PLATE_PRESENT = "water-system-present";
+    public static final String CHANNEL_ID_WATER_AMOUNT = "water-amount";
+    public static final String CHANNEL_ID_WIFI_RSSI = "wifi-rssi";
 
     public static final String CMD_AUTO_CLEAN = "clean";
     public static final String CMD_PAUSE = "pause";
     public static final String CMD_CHARGE = "charge";
     public static final String CMD_STOP = "stop";
+
+    public static final Map<CleanMode, String> CLEAN_MODE_MAPPING = new HashMap<>() {
+        {
+            put(CleanMode.AUTO, "auto");
+            put(CleanMode.EDGE, "edge");
+            put(CleanMode.SPOT, "spot");
+            put(CleanMode.SPOT_AREA, "spotArea");
+            put(CleanMode.CUSTOM_AREA, "customArea");
+            put(CleanMode.SINGLE_ROOM, "singleRoom");
+            put(CleanMode.PAUSE, "pause");
+            put(CleanMode.STOP, "stop");
+            put(CleanMode.RETURNING, "returning");
+        }
+    };
+
+    public static final Map<MoppingWaterAmount, String> WATER_AMOUNT_MAPPING = new HashMap<>() {
+        {
+            put(MoppingWaterAmount.LOW, "low");
+            put(MoppingWaterAmount.MEDIUM, "medium");
+            put(MoppingWaterAmount.HIGH, "high");
+            put(MoppingWaterAmount.VERY_HIGH, "veryhigh");
+        }
+    };
+
+    public static final Map<SuctionPower, String> SUCTION_POWER_MAPPING = new HashMap<>() {
+        {
+            put(SuctionPower.SILENT, "silent");
+            put(SuctionPower.NORMAL, "normal");
+            put(SuctionPower.HIGH, "high");
+            put(SuctionPower.HIGHER, "higher");
+        }
+    };
 }

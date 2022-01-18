@@ -13,11 +13,10 @@
 package org.openhab.binding.ecovacs.internal;
 
 /**
- * The {@link EcovacsConfiguration} class contains fields mapping thing configuration parameters.
+ * The {@link EcovacsDeviceConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Danny Baumann - Initial contribution
  */
-public class EcovacsConfiguration {
-    public String email;
-    public String password;
+public class EcovacsDeviceConfiguration {
+    public int refresh = 5; // in minutes
 }

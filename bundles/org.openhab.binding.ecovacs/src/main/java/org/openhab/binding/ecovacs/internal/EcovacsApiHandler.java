@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import dev.pott.sucks.api.ClientKeys;
 import dev.pott.sucks.api.EcovacsApi;
-import dev.pott.sucks.api.EcovacsApiConfiguration;
 import dev.pott.sucks.api.EcovacsApiException;
 import dev.pott.sucks.api.util.MD5Util;
 
@@ -93,8 +92,8 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
 
     private void initializeApi() {
         scheduler.execute(() -> {
-            EcovacsConfiguration config = getConfigAs(EcovacsConfiguration.class);
-            EcovacsApiConfiguration apiConfig = new EcovacsApiConfiguration(
+            EcovacsApiConfiguration config = getConfigAs(EcovacsApiConfiguration.class);
+            dev.pott.sucks.api.EcovacsApiConfiguration apiConfig = new dev.pott.sucks.api.EcovacsApiConfiguration(
                     MD5Util.getMD5Hash(String.valueOf(System.currentTimeMillis())), // FIXME: unique install ID
                     config.email, config.password,
                     // FIXME: can get this from locale?
