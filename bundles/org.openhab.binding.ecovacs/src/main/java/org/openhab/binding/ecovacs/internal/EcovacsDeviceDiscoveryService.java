@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.ecovacs.internal;
 
+import static org.openhab.binding.ecovacs.internal.EcovacsBindingConstants.*;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -47,7 +49,7 @@ public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService impl
     private @Nullable Future<?> backgroundScanFuture;
 
     public EcovacsDeviceDiscoveryService() {
-        super(Collections.singleton(EcovacsBindingConstants.THING_TYPE_VACUUM), DISCOVER_TIMEOUT_SECONDS, true);
+        super(Collections.singleton(THING_TYPE_VACUUM), DISCOVER_TIMEOUT_SECONDS, true);
     }
 
     @Override
@@ -136,8 +138,7 @@ public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService impl
     }
 
     private void deviceDiscovered(EcovacsDevice device) {
-        ThingUID thingUID = new ThingUID(EcovacsBindingConstants.THING_TYPE_VACUUM, apiHandler.getThing().getUID(),
-                device.getSerialNumber());
+        ThingUID thingUID = new ThingUID(THING_TYPE_VACUUM, apiHandler.getThing().getUID(), device.getSerialNumber());
         DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID)
                 .withBridge(apiHandler.getThing().getUID()).withLabel(device.getModelName())
                 .withProperty(Thing.PROPERTY_SERIAL_NUMBER, device.getSerialNumber())
