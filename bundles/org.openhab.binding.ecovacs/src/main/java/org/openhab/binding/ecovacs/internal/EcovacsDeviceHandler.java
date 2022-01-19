@@ -36,6 +36,7 @@ import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.BaseThingHandler;
+import org.openhab.core.thing.binding.builder.ThingBuilder;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.UnDefType;
 import org.slf4j.Logger;
@@ -104,21 +105,18 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_COMMAND) && command instanceof StringType) {
                 handleDeviceCommand(device, command.toString());
                 return;
-            } else if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_VOICE_VOLUME) && command instanceof DecimalType
-                    && device.hasCapability(DeviceCapability.VOICE_REPORTING)) {
+            } else if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_VOICE_VOLUME) && command instanceof DecimalType) {
                 int volumePercent = ((DecimalType) command).intValue();
                 device.sendCommand(new SetVolumeCommand((volumePercent + 5) / 10));
                 return;
-            } else if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_SUCTION_POWER) && command instanceof StringType
-                    && device.hasCapability(DeviceCapability.CLEAN_SPEED_CONTROL)) {
+            } else if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_SUCTION_POWER) && command instanceof StringType) {
                 SuctionPower power = findMappedEnumValue(EcovacsBindingConstants.SUCTION_POWER_MAPPING,
                         command.toString());
                 if (power != null) {
                     device.sendCommand(new SetSuctionPowerCommand(power));
                     return;
                 }
-            } else if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_WATER_AMOUNT) && command instanceof StringType
-                    && device.hasCapability(DeviceCapability.MOPPING_SYSTEM)) {
+            } else if (channel.equals(EcovacsBindingConstants.CHANNEL_ID_WATER_AMOUNT) && command instanceof StringType) {
                 MoppingWaterAmount amount = findMappedEnumValue(EcovacsBindingConstants.WATER_AMOUNT_MAPPING,
                         command.toString());
                 if (amount != null) {
@@ -151,6 +149,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                         .filter(d -> serial.equals(d.getSerialNumber())).findFirst();
                 if (device.isPresent()) {
                     this.device = device.get();
+                    removeUnsupportedChannels(device.get());
                     connectToDevice();
                 } else {
                     logger.info("{}: Device not found in device list, setting offline", serial);
@@ -260,6 +259,39 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
         stopPolling();
         scheduleReconnection();
+    }
+
+    private void removeUnsupportedChannels(EcovacsDevice device) {
+        ThingBuilder builder = editThing();
+        boolean hasChanges = false;
+
+        if (!device.hasCapability(DeviceCapability.MOPPING_SYSTEM)) {
+            hasChanges |= removeUnsupportedChannel(builder, EcovacsBindingConstants.CHANNEL_ID_WATER_AMOUNT);
+            hasChanges |= removeUnsupportedChannel(builder, EcovacsBindingConstants.CHANNEL_ID_WATER_PLATE_PRESENT);
+        }
+        if (!device.hasCapability(DeviceCapability.CLEAN_SPEED_CONTROL)) {
+            hasChanges |= removeUnsupportedChannel(builder, EcovacsBindingConstants.CHANNEL_ID_SUCTION_POWER);
+        }
+        if (!device.hasCapability(DeviceCapability.MAIN_BRUSH)) {
+            hasChanges |= removeUnsupportedChannel(builder, EcovacsBindingConstants.CHANNEL_ID_MAIN_BRUSH_LIFETIME);
+        }
+        if (!device.hasCapability(DeviceCapability.VOICE_REPORTING)) {
+            hasChanges |= removeUnsupportedChannel(builder, EcovacsBindingConstants.CHANNEL_ID_VOICE_VOLUME);
+        }
+
+        if (hasChanges) {
+            updateThing(builder.build());
+        }
+    }
+
+    private boolean removeUnsupportedChannel(ThingBuilder builder, String channelId) {
+        ChannelUID channelUID = new ChannelUID(getThing().getUID(), channelId);
+        if (getThing().getChannel(channelUID) == null) {
+            return false;
+        }
+        logger.debug("{}: Removing unsupported channel {}", getDeviceSerial(), channelId);
+        builder.withoutChannel(channelUID);
+        return true;
     }
 
     private synchronized void startPolling(long initialDelaySeconds) {

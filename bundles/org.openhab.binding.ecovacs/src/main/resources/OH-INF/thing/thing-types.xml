@@ -38,8 +38,8 @@
 		<channels>
 			<channel id="state" typeId="state"/>
 			<channel id="battery" typeId="system.battery-level"/>
-			<channel id="current-cleaning-time" typeId="cleaning-time"/>
-			<channel id="current-cleaned-area" typeId="cleaned-area"/>
+			<channel id="current-cleaning-time" typeId="current-cleaning-time"/>
+			<channel id="current-cleaned-area" typeId="current-cleaned-area"/>
 			<channel id="water-system-present" typeId="water-system-present"/>
 			<channel id="wifi-rssi" typeId="wifi-rssi"/>
 		</channels>
@@ -126,14 +126,14 @@
 		</state>
 	</channel-type>
 
-	<channel-type id="cleaning-time">
+	<channel-type id="current-cleaning-time">
 		<item-type>Number:Time</item-type>
 		<label>Current cleaning time</label>
 		<description>Cleaning time in current clean cycle</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
-	<channel-type id="cleaned-area">
+	<channel-type id="current-cleaned-area">
 		<item-type>Number:Area</item-type>
 		<label>Current cleaned area</label>
 		<description>Cleaned area in current clean cycle</description>
