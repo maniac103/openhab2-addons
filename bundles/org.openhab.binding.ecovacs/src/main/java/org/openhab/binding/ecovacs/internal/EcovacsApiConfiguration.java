@@ -20,4 +20,5 @@ package org.openhab.binding.ecovacs.internal;
 public class EcovacsApiConfiguration {
     public String email;
     public String password;
+    public String continent;
 }

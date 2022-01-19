@@ -18,6 +18,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.core.i18n.LocaleProvider;
 import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
@@ -39,12 +40,15 @@ import org.osgi.service.component.annotations.Reference;
 @Component(configurationPid = "binding.ecovacs", service = ThingHandlerFactory.class)
 public class EcovacsHandlerFactory extends BaseThingHandlerFactory {
     private HttpClientFactory httpClientFactory;
+    private LocaleProvider localeProvider;
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_API, THING_TYPE_VACUUM);
 
     @Activate
-    public EcovacsHandlerFactory(final @Reference HttpClientFactory httpClientFactory) {
+    public EcovacsHandlerFactory(final @Reference HttpClientFactory httpClientFactory,
+            final @Reference LocaleProvider localeProvider) {
         this.httpClientFactory = httpClientFactory;
+        this.localeProvider = localeProvider;
     }
 
     @Override
@@ -57,7 +61,7 @@ public class EcovacsHandlerFactory extends BaseThingHandlerFactory {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
         if (THING_TYPE_API.equals(thingTypeUID)) {
-            return new EcovacsApiHandler((Bridge) thing, httpClientFactory);
+            return new EcovacsApiHandler((Bridge) thing, httpClientFactory, localeProvider);
         } else {
             return new EcovacsDeviceHandler(thing);
         }

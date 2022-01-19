@@ -17,6 +17,7 @@ import java.util.Collections;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.core.i18n.LocaleProvider;
 import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
@@ -44,13 +45,17 @@ import dev.pott.sucks.api.util.MD5Util;
 public class EcovacsApiHandler extends BaseBridgeHandler {
     private final Logger logger = LoggerFactory.getLogger(EcovacsDeviceHandler.class);
 
+    private static final String PROPERTY_INSTALL_ID = "install-id";
+
     private @Nullable EcovacsDeviceDiscoveryService discoveryService;
     private @Nullable EcovacsApi api;
     private final HttpClientFactory httpClientFactory;
+    private final LocaleProvider localeProvider;
 
-    public EcovacsApiHandler(Bridge bridge, HttpClientFactory httpClientFactory) {
+    public EcovacsApiHandler(Bridge bridge, HttpClientFactory httpClientFactory, LocaleProvider localeProvider) {
         super(bridge);
         this.httpClientFactory = httpClientFactory;
+        this.localeProvider = localeProvider;
     }
 
     public void setDiscoveryService(EcovacsDeviceDiscoveryService discoveryService) {
@@ -92,12 +97,15 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
 
     private void initializeApi() {
         scheduler.execute(() -> {
+            String installId = getThing().getProperties().get(PROPERTY_INSTALL_ID);
+            if (installId == null) {
+                installId = MD5Util.getMD5Hash(String.valueOf(System.currentTimeMillis()));
+                updateProperty(PROPERTY_INSTALL_ID, installId);
+            }
             EcovacsApiConfiguration config = getConfigAs(EcovacsApiConfiguration.class);
             dev.pott.sucks.api.EcovacsApiConfiguration apiConfig = new dev.pott.sucks.api.EcovacsApiConfiguration(
-                    MD5Util.getMD5Hash(String.valueOf(System.currentTimeMillis())), // FIXME: unique install ID
-                    config.email, config.password,
-                    // FIXME: can get this from locale?
-                    "EU", "DE", "EN", ClientKeys.CLIENT_KEY, ClientKeys.CLIENT_SECRET, ClientKeys.AUTH_CLIENT_KEY,
+                    installId, config.email, config.password, config.continent, localeProvider.getLocale().getCountry(),
+                    "EN", ClientKeys.CLIENT_KEY, ClientKeys.CLIENT_SECRET, ClientKeys.AUTH_CLIENT_KEY,
                     ClientKeys.AUTH_CLIENT_SECRET);
 
             EcovacsApi api = EcovacsApi.create(httpClientFactory.getCommonHttpClient(), apiConfig);

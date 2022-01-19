@@ -10,14 +10,28 @@
 		<description>The API account</description>
 
 		<config-description>
-			<parameter name="email" type="text" required="true">
+			<parameter name="email" type="text">
 				<label>Email</label>
+				<context>email</context>
 				<description>Email address for logging in to Ecovacs server</description>
+				<required>true</required>
 			</parameter>
-			<parameter name="password" type="text" required="true">
+			<parameter name="password" type="text">
 				<label>Password</label>
 				<context>password</context>
 				<description>Password for logging in to Ecovacs server</description>
+				<required>true</required>
+			</parameter>
+			<parameter name="continent" type="text">
+				<label>Continent</label>
+				<description>Continent the account was registered on. Choose the one you are located in, or "World" if none matches.</description>
+				<default>ww</default>
+				<required>true</required>
+				<options>
+					<option value="ww">World</option>
+					<option value="eu">Europe</option>
+					<option value="na">North America</option>
+				</options>
 			</parameter>
 		</config-description>
 	</bridge-type>
