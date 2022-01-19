@@ -21,4 +21,5 @@ public class EcovacsApiConfiguration {
     public String email;
     public String password;
     public String continent;
+    public String installId;
 }
