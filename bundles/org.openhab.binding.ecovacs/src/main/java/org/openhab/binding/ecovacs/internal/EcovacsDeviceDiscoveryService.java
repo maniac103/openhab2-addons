@@ -15,6 +15,7 @@ package org.openhab.binding.ecovacs.internal;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -42,7 +43,8 @@ public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService impl
     private static final int DISCOVER_TIMEOUT_SECONDS = 10;
 
     private @NonNullByDefault({}) EcovacsApiHandler apiHandler;
-    private @Nullable Future<?> scanFuture;
+    private @Nullable Future<?> onDemandScanFuture;
+    private @Nullable Future<?> backgroundScanFuture;
 
     public EcovacsDeviceDiscoveryService() {
         super(Collections.singleton(EcovacsBindingConstants.THING_TYPE_VACUUM), DISCOVER_TIMEOUT_SECONDS, true);
@@ -72,55 +74,72 @@ public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService impl
     }
 
     @Override
-    protected void startScan() {
-        if (scanFuture != null) {
+    protected synchronized void startBackgroundDiscovery() {
+        stopBackgroundDiscovery();
+        backgroundScanFuture = scheduler.scheduleWithFixedDelay(this::scanForDevices, 0, 60, TimeUnit.SECONDS);
+    }
+
+    @Override
+    protected synchronized void stopBackgroundDiscovery() {
+        if (backgroundScanFuture != null) {
+            backgroundScanFuture.cancel(true);
+            backgroundScanFuture = null;
+        }
+    }
+
+    @Override
+    protected synchronized void startScan() {
+        if (onDemandScanFuture != null && !onDemandScanFuture.isDone()) {
             logger.debug("Ecovacs device discovery scan already in progress");
             return;
         }
 
         logger.debug("Starting Ecovacs discovery scan");
-        scanFuture = scheduler.submit(() -> {
-            EcovacsApi api = apiHandler.getApi();
-            if (api == null) {
-                return;
-            }
-
-            try {
-                List<EcovacsDevice> devices = api.getDevices();
-
-                for (EcovacsDevice device : devices) {
-                    deviceDiscovered(device);
-                }
-                for (Thing thing : apiHandler.getThing().getThings()) {
-                    String serial = thing.getUID().getId();
-                    if (!devices.stream().anyMatch(d -> serial.equals(d.getSerialNumber()))) {
-                        thingRemoved(thing.getUID());
-                    }
-                }
-            } catch (EcovacsApiException e) {
-                logger.debug("Could not retrieve devices from Ecovacs API", e);
-            } finally {
-                removeOlderResults(getTimestampOfLastScan());
-                scanFuture = null;
-            }
-        });
+        onDemandScanFuture = scheduler.submit(this::scanForDevices);
     }
 
     @Override
-    public void stopScan() {
+    public synchronized void stopScan() {
         logger.debug("Stopping Ecovacs discovery scan");
-        final Future<?> scanFuture = this.scanFuture;
-        if (scanFuture != null) {
-            scanFuture.cancel(true);
+        if (onDemandScanFuture != null) {
+            onDemandScanFuture.cancel(true);
+            onDemandScanFuture = null;
         }
         super.stopScan();
+    }
+
+    private void scanForDevices() {
+        EcovacsApi api = apiHandler != null ? apiHandler.getApi() : null;
+        long timestampOfLastScan = getTimestampOfLastScan();
+        if (api == null) {
+            return;
+        }
+
+        try {
+            List<EcovacsDevice> devices = api.getDevices();
+            logger.debug("Ecovacs discovery found {} devices", devices.size());
+
+            for (EcovacsDevice device : devices) {
+                deviceDiscovered(device);
+            }
+            for (Thing thing : apiHandler.getThing().getThings()) {
+                String serial = thing.getUID().getId();
+                if (!devices.stream().anyMatch(d -> serial.equals(d.getSerialNumber()))) {
+                    thingRemoved(thing.getUID());
+                }
+            }
+        } catch (EcovacsApiException e) {
+            logger.debug("Could not retrieve devices from Ecovacs API", e);
+        } finally {
+            removeOlderResults(timestampOfLastScan);
+        }
     }
 
     private void deviceDiscovered(EcovacsDevice device) {
         ThingUID thingUID = new ThingUID(EcovacsBindingConstants.THING_TYPE_VACUUM, apiHandler.getThing().getUID(),
                 device.getSerialNumber());
         DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID)
-                .withBridge(apiHandler.getThing().getUID())
+                .withBridge(apiHandler.getThing().getUID()).withLabel(device.getModelName())
                 .withProperty(Thing.PROPERTY_SERIAL_NUMBER, device.getSerialNumber())
                 .withProperty(Thing.PROPERTY_MODEL_ID, device.getModelName())
                 .withProperty(Thing.PROPERTY_FIRMWARE_VERSION, device.getFirmwareVersion())
