@@ -62,6 +62,7 @@ _Note that it is planned to generate some part of this based on the XML files wi
 | settings#water-amount            | String               | The amount of water to be used when mopping               | No        | Polling    | [9]     |
 
 Remarks:
+
 - [1] Possible actions include 'clean' (start auto cleaning), 'pause', 'stop' and 'charge' (go to charge station)
 - [2] Possible states: 'auto', 'edge', 'spot', 'spotArea', 'customArea', 'singleRoom', 'pause', 'stop', 'returning' and 'charging'
 - [3] Current cleaning status is only valid if the device is currently cleaning

@@ -126,7 +126,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             }
             logger.debug("{}: Ignoring unsupported device command {}", getDeviceSerial(), command);
         } catch (EcovacsApiException e) {
-            logger.debug(getDeviceSerial() + ": Handling device command " + command + " failed", e);
+            logger.debug("{}: Handling device command {} failed", getDeviceSerial(), command, e);
         }
     }
 
@@ -252,7 +252,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void onDeviceConnectionFailed(final EcovacsDevice device, Throwable error) {
-        logger.debug(getDeviceSerial() + ": Device connection failed, reconnecting", error);
+        logger.debug("{}: Device connection failed, reconnecting", getDeviceSerial(), error);
         device.disconnect();
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
         stopPolling();
@@ -446,7 +446,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             if (e.getCause() instanceof InterruptedException) {
                 return;
             }
-            logger.debug(getDeviceSerial() + ": Failed communicating to device, reconnecting", e);
+            logger.debug("{}: Failed communicating to device, reconnecting", getDeviceSerial(), e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
             stopPolling();
             scheduleReconnection();

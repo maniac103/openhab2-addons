@@ -45,7 +45,7 @@ import dev.pott.sucks.api.util.MD5Util;
  */
 @NonNullByDefault
 public class EcovacsApiHandler extends BaseBridgeHandler {
-    private final Logger logger = LoggerFactory.getLogger(EcovacsDeviceHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(EcovacsApiHandler.class);
 
     private @Nullable EcovacsDeviceDiscoveryService discoveryService;
     private @Nullable EcovacsApi api;

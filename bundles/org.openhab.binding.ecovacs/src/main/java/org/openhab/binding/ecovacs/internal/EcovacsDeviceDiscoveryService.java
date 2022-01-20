@@ -37,6 +37,11 @@ import dev.pott.sucks.api.EcovacsApi;
 import dev.pott.sucks.api.EcovacsApiException;
 import dev.pott.sucks.api.EcovacsDevice;
 
+/**
+ * The {@link EcovacsDeviceDiscoveryService} is used for discovering devices registered in the cloud account.
+ *
+ * @author Danny Baumann - Initial contribution
+ */
 @NonNullByDefault
 @Component(service = DiscoveryService.class, configurationPid = "discovery.ecovacs")
 public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService implements ThingHandlerService {

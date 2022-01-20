@@ -12,11 +12,14 @@
  */
 package org.openhab.binding.ecovacs.internal;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * The {@link EcovacsDeviceConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class EcovacsDeviceConfiguration {
     public int refresh = 5; // in minutes
 }
