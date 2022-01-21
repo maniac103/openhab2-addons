@@ -1,0 +1,69 @@
+/**
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+package org.openhab.binding.ecovacs.internal.api;
+
+import java.util.List;
+
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.MultiCommand;
+import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
+import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
+import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
+import org.openhab.binding.ecovacs.internal.api.model.ErrorDescription;
+import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
+import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
+
+/**
+ * @author Danny Baumann - Initial contribution
+ */
+@NonNullByDefault
+public interface EcovacsDevice {
+    public interface StateChangeListener {
+        void onBatteryLevelChanged(EcovacsDevice device, int newLevelPercent);
+
+        void onChargingStateChanged(EcovacsDevice device, boolean charging);
+
+        void onCleaningModeChanged(EcovacsDevice device, CleanMode newMode);
+
+        void onCleaningPowerChanged(EcovacsDevice device, SuctionPower newPower);
+
+        void onCleaningStatsChanged(EcovacsDevice device, int cleanedArea, int cleaningTimeSeconds);
+
+        void onWaterSystemChanged(EcovacsDevice device, boolean present, MoppingWaterAmount amount);
+
+        void onErrorReported(EcovacsDevice device, ErrorDescription error);
+
+        void onDeviceConnectionFailed(EcovacsDevice device, Throwable error);
+    }
+
+    public String getId();
+
+    public String getSerialNumber();
+
+    public String getModelName();
+
+    public String getFirmwareVersion();
+
+    public boolean hasCapability(DeviceCapability cap);
+
+    public void connect(StateChangeListener listener) throws EcovacsApiException;
+
+    public void disconnect();
+
+    public <T> T sendCommand(IotDeviceCommand<T> command) throws EcovacsApiException;
+
+    public <T> T sendCommand(MultiCommand<T> command) throws EcovacsApiException;
+
+    public List<CleanLogRecord> getCleanLogs() throws EcovacsApiException;
+}

@@ -16,11 +16,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
+import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
+import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
 import org.openhab.core.thing.ThingTypeUID;
-
-import dev.pott.sucks.cleaner.CleanMode;
-import dev.pott.sucks.cleaner.MoppingWaterAmount;
-import dev.pott.sucks.cleaner.SuctionPower;
 
 /**
  * The {@link EcovacsBindingConstants} class defines common constants, which are

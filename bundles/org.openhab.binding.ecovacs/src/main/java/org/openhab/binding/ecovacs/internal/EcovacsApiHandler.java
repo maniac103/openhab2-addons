@@ -18,6 +18,10 @@ import java.util.UUID;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.ClientKeys;
+import org.openhab.binding.ecovacs.internal.api.EcovacsApi;
+import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
+import org.openhab.binding.ecovacs.internal.api.util.MD5Util;
 import org.openhab.core.config.core.Configuration;
 import org.openhab.core.i18n.LocaleProvider;
 import org.openhab.core.io.net.http.HttpClientFactory;
@@ -31,11 +35,6 @@ import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import dev.pott.sucks.api.ClientKeys;
-import dev.pott.sucks.api.EcovacsApi;
-import dev.pott.sucks.api.EcovacsApiException;
-import dev.pott.sucks.api.util.MD5Util;
 
 /**
  * The {@link EcovacsDeviceHandler} is responsible for handling commands, which are
@@ -105,7 +104,7 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
     private void initializeApi() {
         scheduler.execute(() -> {
             EcovacsApiConfiguration config = getConfigAs(EcovacsApiConfiguration.class);
-            dev.pott.sucks.api.EcovacsApiConfiguration apiConfig = new dev.pott.sucks.api.EcovacsApiConfiguration(
+            org.openhab.binding.ecovacs.internal.api.EcovacsApiConfiguration apiConfig = new org.openhab.binding.ecovacs.internal.api.EcovacsApiConfiguration(
                     config.installId, config.email, config.password, config.continent,
                     localeProvider.getLocale().getCountry(), "EN", ClientKeys.CLIENT_KEY, ClientKeys.CLIENT_SECRET,
                     ClientKeys.AUTH_CLIENT_KEY, ClientKeys.AUTH_CLIENT_SECRET);

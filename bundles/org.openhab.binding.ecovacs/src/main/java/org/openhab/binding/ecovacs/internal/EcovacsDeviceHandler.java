@@ -23,6 +23,31 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.EcovacsApi;
+import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
+import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
+import org.openhab.binding.ecovacs.internal.api.commands.GetComponentLifeSpanCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.GetMoppingWaterAmountCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.GetNetworkInfoCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.GetSuctionPowerCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.GetTotalStatsCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.GetTotalStatsCommand.TotalStats;
+import org.openhab.binding.ecovacs.internal.api.commands.GetVolumeCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.GoChargingCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.SetMoppingWaterAmountCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.SetSuctionPowerCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.SetVolumeCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.StartAutoCleaningCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.StopCleaningCommand;
+import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
+import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
+import org.openhab.binding.ecovacs.internal.api.model.Component;
+import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
+import org.openhab.binding.ecovacs.internal.api.model.ErrorDescription;
+import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
+import org.openhab.binding.ecovacs.internal.api.model.NetworkInfo;
+import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
+import org.openhab.core.io.net.http.HttpUtil;
 import org.openhab.core.library.types.DateTimeType;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
@@ -43,31 +68,6 @@ import org.openhab.core.types.Command;
 import org.openhab.core.types.UnDefType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import dev.pott.sucks.api.EcovacsApi;
-import dev.pott.sucks.api.EcovacsApiException;
-import dev.pott.sucks.api.EcovacsDevice;
-import dev.pott.sucks.api.commands.GetComponentLifeSpanCommand;
-import dev.pott.sucks.api.commands.GetMoppingWaterAmountCommand;
-import dev.pott.sucks.api.commands.GetNetworkInfoCommand;
-import dev.pott.sucks.api.commands.GetSuctionPowerCommand;
-import dev.pott.sucks.api.commands.GetTotalStatsCommand;
-import dev.pott.sucks.api.commands.GetTotalStatsCommand.TotalStats;
-import dev.pott.sucks.api.commands.GetVolumeCommand;
-import dev.pott.sucks.api.commands.GoChargingCommand;
-import dev.pott.sucks.api.commands.SetMoppingWaterAmountCommand;
-import dev.pott.sucks.api.commands.SetSuctionPowerCommand;
-import dev.pott.sucks.api.commands.SetVolumeCommand;
-import dev.pott.sucks.api.commands.StartAutoCleaningCommand;
-import dev.pott.sucks.api.commands.StopCleaningCommand;
-import dev.pott.sucks.cleaner.CleanLogRecord;
-import dev.pott.sucks.cleaner.CleanMode;
-import dev.pott.sucks.cleaner.Component;
-import dev.pott.sucks.cleaner.DeviceCapability;
-import dev.pott.sucks.cleaner.ErrorDescription;
-import dev.pott.sucks.cleaner.MoppingWaterAmount;
-import dev.pott.sucks.cleaner.NetworkInfo;
-import dev.pott.sucks.cleaner.SuctionPower;
 
 /**
  * The {@link EcovacsDeviceHandler} is responsible for handling commands, which are
@@ -276,6 +276,9 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         if (!device.hasCapability(DeviceCapability.VOICE_REPORTING)) {
             hasChanges |= removeUnsupportedChannel(builder, CHANNEL_ID_VOICE_VOLUME);
         }
+        if (!device.hasCapability(DeviceCapability.MAPPING)) {
+            hasChanges |= removeUnsupportedChannel(builder, CHANNEL_ID_LAST_CLEAN_MAP);
+        }
 
         if (hasChanges) {
             updateThing(builder.build());
@@ -336,15 +339,17 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
             updateState(CHANNEL_ID_TOTAL_CLEANING_TIME, new QuantityType<>(totalStats.totalRuntime, Units.SECOND));
             updateState(CHANNEL_ID_TOTAL_CLEAN_RUNS, new DecimalType(totalStats.cleanRuns));
 
-            List<CleanLogRecord> lastCleanRecord = device.getCleanLogs(1);
-            if (!lastCleanRecord.isEmpty()) {
-                CleanLogRecord record = lastCleanRecord.get(0);
+            List<CleanLogRecord> cleanLogRecords = device.getCleanLogs();
+            if (!cleanLogRecords.isEmpty()) {
+                CleanLogRecord record = cleanLogRecords.get(0);
                 updateState(CHANNEL_ID_LAST_CLEAN_START,
                         new DateTimeType(record.timestamp.toInstant().atZone(ZoneId.systemDefault())));
                 updateState(CHANNEL_ID_LAST_CLEAN_DURATION, new QuantityType<>(record.cleaningDuration, Units.SECOND));
                 updateState(CHANNEL_ID_LAST_CLEAN_AREA, new QuantityType<>(record.cleanedArea, SIUnits.SQUARE_METRE));
                 updateState(CHANNEL_ID_LAST_CLEAN_MODE, new StringType(CLEAN_MODE_MAPPING.get(record.mode)));
-                updateState(CHANNEL_ID_LAST_CLEAN_MAP, new RawType(record.mapImagePngData, "image/png"));
+                if (record.mapImageUrl != null) {
+                    updateState(CHANNEL_ID_LAST_CLEAN_MAP, HttpUtil.downloadImage(record.mapImageUrl));
+                }
             }
 
             if (device.hasCapability(DeviceCapability.CLEAN_SPEED_CONTROL)) {

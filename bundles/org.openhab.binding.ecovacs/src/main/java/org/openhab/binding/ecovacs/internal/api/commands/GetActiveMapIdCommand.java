@@ -1,0 +1,41 @@
+/**
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+package org.openhab.binding.ecovacs.internal.api.commands;
+
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.CachedMapInfoReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
+
+import com.google.gson.Gson;
+
+/**
+ * @author Danny Baumann - Initial contribution
+ */
+public class GetActiveMapIdCommand extends IotDeviceCommand<String> {
+    public GetActiveMapIdCommand() {
+        super("GetMapM", "getCachedMapInfo");
+    }
+
+    @Override
+    public String convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+        if (response instanceof PortalIotCommandJsonResponse) {
+            CachedMapInfoReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
+                    CachedMapInfoReport.class);
+            return resp.mapInfos.stream().filter(i -> i.used != 0).map(i -> i.mapId).findFirst().orElse("");
+        } else {
+            String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
+            return getFirstXPathMatch(payload, "//@i").getNodeValue();
+        }
+    }
+}

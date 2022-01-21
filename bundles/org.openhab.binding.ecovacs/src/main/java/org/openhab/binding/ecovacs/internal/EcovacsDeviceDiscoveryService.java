@@ -21,6 +21,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.EcovacsApi;
+import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
+import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
 import org.openhab.core.config.discovery.AbstractDiscoveryService;
 import org.openhab.core.config.discovery.DiscoveryResult;
 import org.openhab.core.config.discovery.DiscoveryResultBuilder;
@@ -32,10 +35,6 @@ import org.openhab.core.thing.binding.ThingHandlerService;
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import dev.pott.sucks.api.EcovacsApi;
-import dev.pott.sucks.api.EcovacsApiException;
-import dev.pott.sucks.api.EcovacsDevice;
 
 /**
  * The {@link EcovacsDeviceDiscoveryService} is used for discovering devices registered in the cloud account.
