@@ -34,6 +34,9 @@ import org.openhab.binding.ecovacs.internal.api.commands.GetTotalStatsCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetTotalStatsCommand.TotalStats;
 import org.openhab.binding.ecovacs.internal.api.commands.GetVolumeCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GoChargingCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.PauseCleaningCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.ResumeCleaningCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.SetMoppingWaterAmountCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.SetSuctionPowerCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.SetVolumeCommand;
@@ -105,8 +108,11 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
 
         try {
             if (channel.equals(CHANNEL_ID_COMMAND) && command instanceof StringType) {
-                handleDeviceCommand(device, command.toString());
-                return;
+                IotDeviceCommand<Void> cmd = determineDeviceCommand(device, command.toString());
+                if (cmd != null) {
+                    device.sendCommand(cmd);
+                    return;
+                }
             } else if (channel.equals(CHANNEL_ID_VOICE_VOLUME) && command instanceof DecimalType) {
                 int volumePercent = ((DecimalType) command).intValue();
                 device.sendCommand(new SetVolumeCommand((volumePercent + 5) / 10));
@@ -124,7 +130,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                     return;
                 }
             }
-            logger.debug("{}: Ignoring unsupported device command {}", getDeviceSerial(), command);
+            logger.debug("{}: Ignoring unsupported device command {} for channel {}", getDeviceSerial(), command, channel);
         } catch (EcovacsApiException e) {
             logger.debug("{}: Handling device command {} failed", getDeviceSerial(), command, e);
         }
@@ -422,18 +428,20 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
         return null;
     }
 
-    private void handleDeviceCommand(EcovacsDevice device, String command) throws EcovacsApiException {
+    private @Nullable IotDeviceCommand<Void> determineDeviceCommand(EcovacsDevice device, String command) {
         switch (command) {
             case CMD_AUTO_CLEAN:
-                device.sendCommand(new StartAutoCleaningCommand());
-                break;
+                return new StartAutoCleaningCommand();
+            case CMD_PAUSE:
+                return new PauseCleaningCommand();
+            case CMD_RESUME:
+                return new ResumeCleaningCommand();
             case CMD_STOP:
-                device.sendCommand(new StopCleaningCommand());
-                break;
+                return new StopCleaningCommand();
             case CMD_CHARGE:
-                device.sendCommand(new GoChargingCommand());
-                break;
+                return new GoChargingCommand();
         }
+        return null;
     }
 
     private interface WithDeviceAction {

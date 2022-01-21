@@ -60,6 +60,7 @@ public class EcovacsBindingConstants {
 
     public static final String CMD_AUTO_CLEAN = "clean";
     public static final String CMD_PAUSE = "pause";
+    public static final String CMD_RESUME = "resume";
     public static final String CMD_CHARGE = "charge";
     public static final String CMD_STOP = "stop";
 

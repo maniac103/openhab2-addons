@@ -119,7 +119,8 @@
 			<options>
 				<option value="clean">Automatic cleaning</option>
 				<!-- TODO: support spot -->
-				<option value="pause">Pause</option>
+				<option value="pause">Pause cleaning</option>
+				<option value="resume">Resume cleaning</option>
 				<option value="stop">Stop</option>
 				<option value="charge">Go to charge station</option>
 			</options>
