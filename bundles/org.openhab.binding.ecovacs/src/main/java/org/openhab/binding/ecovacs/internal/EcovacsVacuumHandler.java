@@ -56,7 +56,6 @@ import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.PercentType;
 import org.openhab.core.library.types.QuantityType;
-import org.openhab.core.library.types.RawType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
@@ -73,15 +72,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link EcovacsDeviceHandler} is responsible for handling commands, which are
- * sent to one of the channels.
+ * The {@link EcovacsVacuumHandler} is responsible for handling data and commands from/to vacuum cleaners.
  *
  * @author Danny Baumann - Initial contribution
  */
 @NonNullByDefault
-public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDevice.StateChangeListener {
+public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDevice.StateChangeListener {
 
-    private final Logger logger = LoggerFactory.getLogger(EcovacsDeviceHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(EcovacsVacuumHandler.class);
 
     private @Nullable ScheduledFuture<?> reconnectFuture;
     private @Nullable ScheduledFuture<?> pollFuture;
@@ -93,7 +91,7 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
     private @Nullable Boolean lastWaterPlatePresent;
     private @Nullable MoppingWaterAmount lastMoppingWaterAmount;
 
-    public EcovacsDeviceHandler(Thing thing) {
+    public EcovacsVacuumHandler(Thing thing) {
         super(thing);
     }
 
@@ -130,7 +128,8 @@ public class EcovacsDeviceHandler extends BaseThingHandler implements EcovacsDev
                     return;
                 }
             }
-            logger.debug("{}: Ignoring unsupported device command {} for channel {}", getDeviceSerial(), command, channel);
+            logger.debug("{}: Ignoring unsupported device command {} for channel {}", getDeviceSerial(), command,
+                    channel);
         } catch (EcovacsApiException e) {
             logger.debug("{}: Handling device command {} failed", getDeviceSerial(), command, e);
         }

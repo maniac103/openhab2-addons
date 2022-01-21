@@ -63,7 +63,7 @@ public class EcovacsHandlerFactory extends BaseThingHandlerFactory {
         if (THING_TYPE_API.equals(thingTypeUID)) {
             return new EcovacsApiHandler((Bridge) thing, httpClientFactory, localeProvider);
         } else {
-            return new EcovacsDeviceHandler(thing);
+            return new EcovacsVacuumHandler(thing);
         }
     }
 }

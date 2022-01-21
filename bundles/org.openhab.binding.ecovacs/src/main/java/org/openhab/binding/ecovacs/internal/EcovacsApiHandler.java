@@ -37,8 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link EcovacsDeviceHandler} is responsible for handling commands, which are
- * sent to one of the channels.
+ * The {@link EcovacsApiHandler} is responsible for connecting to the Ecovacs cloud API account.
  *
  * @author Danny Baumann - Initial contribution
  */
