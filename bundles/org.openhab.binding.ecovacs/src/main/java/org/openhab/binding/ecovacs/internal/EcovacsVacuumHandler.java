@@ -26,6 +26,9 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApi;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
+import org.openhab.binding.ecovacs.internal.api.commands.GetBatteryInfoCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.GetChargeStateCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.GetCleanStateCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetComponentLifeSpanCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetMoppingWaterAmountCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetNetworkInfoCommand;
@@ -33,6 +36,7 @@ import org.openhab.binding.ecovacs.internal.api.commands.GetSuctionPowerCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetTotalStatsCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetTotalStatsCommand.TotalStats;
 import org.openhab.binding.ecovacs.internal.api.commands.GetVolumeCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.GetWaterSystemPresentCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GoChargingCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.PauseCleaningCommand;
@@ -42,6 +46,7 @@ import org.openhab.binding.ecovacs.internal.api.commands.SetSuctionPowerCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.SetVolumeCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.StartAutoCleaningCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.StopCleaningCommand;
+import org.openhab.binding.ecovacs.internal.api.model.ChargeMode;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.Component;
@@ -77,7 +82,7 @@ import org.slf4j.LoggerFactory;
  * @author Danny Baumann - Initial contribution
  */
 @NonNullByDefault
-public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDevice.StateChangeListener {
+public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDevice.EventListener {
 
     private final Logger logger = LoggerFactory.getLogger(EcovacsVacuumHandler.class);
 
@@ -85,11 +90,8 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     private @Nullable ScheduledFuture<?> pollFuture;
     private @Nullable EcovacsDevice device;
 
-    private int lastBatteryLevel;
     private @Nullable Boolean lastWasCharging;
     private @Nullable CleanMode lastCleanMode;
-    private @Nullable Boolean lastWaterPlatePresent;
-    private @Nullable MoppingWaterAmount lastMoppingWaterAmount;
 
     public EcovacsVacuumHandler(Thing thing) {
         super(thing);
@@ -172,7 +174,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         super.dispose();
         EcovacsDevice device = this.device;
         if (device != null) {
-            device.disconnect();
+            device.stopListeningForEvents();
         }
         ScheduledFuture<?> reconnectFuture = this.reconnectFuture;
         if (reconnectFuture != null) {
@@ -183,46 +185,40 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void channelLinked(ChannelUID channelUID) {
-        EcovacsDevice device = this.device;
-        if (device == null) {
-            return;
-        }
-
-        switch (channelUID.getId()) {
-            case CHANNEL_ID_BATTERY_LEVEL:
-                onBatteryLevelChanged(device, lastBatteryLevel);
-                break;
-            case CHANNEL_ID_STATE:
-            case CHANNEL_ID_COMMAND:
-                updateStateAndCommandChannels();
-                break;
-            case CHANNEL_ID_WATER_PLATE_PRESENT: {
-                final MoppingWaterAmount amount = lastMoppingWaterAmount;
-                if (amount != null) {
-                    onWaterSystemChanged(device, lastWaterPlatePresent, amount);
-                }
-                break;
+        try {
+            switch (channelUID.getId()) {
+                case CHANNEL_ID_BATTERY_LEVEL:
+                    fetchInitialBatteryStatus();
+                    break;
+                case CHANNEL_ID_STATE:
+                case CHANNEL_ID_COMMAND:
+                    fetchInitialStateAndCommandValues();
+                    break;
+                case CHANNEL_ID_WATER_PLATE_PRESENT:
+                    fetchInitialWaterSystemValues();
+                    break;
+                default:
+                    startPolling(5); // add some delay in case multiple channels are linked at once
+                    break;
             }
-            default:
-                startPolling(5); // add some delay in case multiple channels are linked at once
-                break;
+        } catch (EcovacsApiException e) {
+            logger.debug("{}: Fetching initial data for channel {} failed", getDeviceSerial(), channelUID.getId(), e);
         }
     }
 
     @Override
-    public void onBatteryLevelChanged(EcovacsDevice device, int newLevelPercent) {
-        lastBatteryLevel = newLevelPercent;
+    public void onBatteryLevelUpdated(EcovacsDevice device, int newLevelPercent) {
         updateState(CHANNEL_ID_BATTERY_LEVEL, new DecimalType(newLevelPercent));
     }
 
     @Override
-    public void onChargingStateChanged(EcovacsDevice device, boolean charging) {
+    public void onChargingStateUpdated(EcovacsDevice device, boolean charging) {
         lastWasCharging = charging;
         updateStateAndCommandChannels();
     }
 
     @Override
-    public void onCleaningModeChanged(EcovacsDevice device, CleanMode newMode) {
+    public void onCleaningModeUpdated(EcovacsDevice device, CleanMode newMode) {
         lastCleanMode = newMode;
         updateStateAndCommandChannels();
         if (newMode == CleanMode.RETURNING) {
@@ -234,20 +230,19 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     }
 
     @Override
-    public void onCleaningPowerChanged(EcovacsDevice device, SuctionPower newPower) {
+    public void onCleaningPowerUpdated(EcovacsDevice device, SuctionPower newPower) {
     }
 
     @Override
-    public void onCleaningStatsChanged(EcovacsDevice device, int cleanedArea, int cleaningTimeSeconds) {
+    public void onCleaningStatsUpdated(EcovacsDevice device, int cleanedArea, int cleaningTimeSeconds) {
         updateState(CHANNEL_ID_CLEANED_AREA, new QuantityType<>(cleanedArea, SIUnits.SQUARE_METRE));
         updateState(CHANNEL_ID_CLEANING_TIME, new QuantityType<>(cleaningTimeSeconds, Units.SECOND));
     }
 
     @Override
-    public void onWaterSystemChanged(EcovacsDevice device, boolean present, MoppingWaterAmount amount) {
-        lastWaterPlatePresent = present;
-        lastMoppingWaterAmount = amount;
+    public void onWaterSystemUpdated(EcovacsDevice device, boolean present, MoppingWaterAmount amount) {
         updateState(CHANNEL_ID_WATER_PLATE_PRESENT, OnOffType.from(present));
+        updateState(CHANNEL_ID_WATER_AMOUNT, new StringType(WATER_AMOUNT_MAPPING.get(amount)));
     }
 
     @Override
@@ -256,12 +251,38 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     }
 
     @Override
-    public void onDeviceConnectionFailed(final EcovacsDevice device, Throwable error) {
+    public void onEventStreamFailure(final EcovacsDevice device, Throwable error) {
         logger.debug("{}: Device connection failed, reconnecting", getDeviceSerial(), error);
-        device.disconnect();
+        device.stopListeningForEvents();
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
         stopPolling();
         scheduleReconnection();
+    }
+
+    private void fetchInitialBatteryStatus() throws EcovacsApiException {
+        doWithDevice(device -> {
+            Integer batteryPercent = device.sendCommand(new GetBatteryInfoCommand());
+            onBatteryLevelUpdated(device, batteryPercent);
+        });
+    }
+
+    private void fetchInitialStateAndCommandValues() throws EcovacsApiException {
+        doWithDevice(device -> {
+            lastWasCharging = device.sendCommand(new GetChargeStateCommand()) == ChargeMode.CHARGING;
+            lastCleanMode = device.sendCommand(new GetCleanStateCommand());
+            updateStateAndCommandChannels();
+        });
+    }
+
+    private void fetchInitialWaterSystemValues() throws EcovacsApiException {
+        doWithDevice(device -> {
+            if (!device.hasCapability(DeviceCapability.MOPPING_SYSTEM)) {
+                return;
+            }
+            boolean present = device.sendCommand(new GetWaterSystemPresentCommand());
+            MoppingWaterAmount amount = device.sendCommand(new GetMoppingWaterAmountCommand());
+            onWaterSystemUpdated(device, present, amount);
+        });
     }
 
     private void removeUnsupportedChannels(EcovacsDevice device) {
@@ -329,9 +350,12 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     private void connectToDevice() {
         doWithDevice(device -> {
-            device.connect(this);
+            device.listenForEvents(this);
             logger.debug("{}: Device connected", getDeviceSerial());
             updateStatus(ThingStatus.ONLINE);
+            fetchInitialBatteryStatus();
+            fetchInitialStateAndCommandValues();
+            fetchInitialWaterSystemValues(); // nop if unsupported
             startPolling(0);
         });
     }

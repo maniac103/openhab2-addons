@@ -29,22 +29,22 @@ import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
  */
 @NonNullByDefault
 public interface EcovacsDevice {
-    public interface StateChangeListener {
-        void onBatteryLevelChanged(EcovacsDevice device, int newLevelPercent);
+    public interface EventListener {
+        void onBatteryLevelUpdated(EcovacsDevice device, int newLevelPercent);
 
-        void onChargingStateChanged(EcovacsDevice device, boolean charging);
+        void onChargingStateUpdated(EcovacsDevice device, boolean charging);
 
-        void onCleaningModeChanged(EcovacsDevice device, CleanMode newMode);
+        void onCleaningModeUpdated(EcovacsDevice device, CleanMode newMode);
 
-        void onCleaningPowerChanged(EcovacsDevice device, SuctionPower newPower);
+        void onCleaningPowerUpdated(EcovacsDevice device, SuctionPower newPower);
 
-        void onCleaningStatsChanged(EcovacsDevice device, int cleanedArea, int cleaningTimeSeconds);
+        void onCleaningStatsUpdated(EcovacsDevice device, int cleanedArea, int cleaningTimeSeconds);
 
-        void onWaterSystemChanged(EcovacsDevice device, boolean present, MoppingWaterAmount amount);
+        void onWaterSystemUpdated(EcovacsDevice device, boolean present, MoppingWaterAmount amount);
 
         void onErrorReported(EcovacsDevice device, ErrorDescription error);
 
-        void onDeviceConnectionFailed(EcovacsDevice device, Throwable error);
+        void onEventStreamFailure(EcovacsDevice device, Throwable error);
     }
 
     public String getId();
@@ -57,9 +57,9 @@ public interface EcovacsDevice {
 
     public boolean hasCapability(DeviceCapability cap);
 
-    public void connect(StateChangeListener listener) throws EcovacsApiException;
+    public void listenForEvents(EventListener listener) throws EcovacsApiException;
 
-    public void disconnect();
+    public void stopListeningForEvents();
 
     public <T> T sendCommand(IotDeviceCommand<T> command) throws EcovacsApiException;
 

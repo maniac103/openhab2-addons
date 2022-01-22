@@ -27,12 +27,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiConfiguration;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
-import org.openhab.binding.ecovacs.internal.api.commands.GetBatteryInfoCommand;
-import org.openhab.binding.ecovacs.internal.api.commands.GetChargeStateCommand;
-import org.openhab.binding.ecovacs.internal.api.commands.GetCleanStateCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetFirmwareVersionCommand;
-import org.openhab.binding.ecovacs.internal.api.commands.GetMoppingWaterAmountCommand;
-import org.openhab.binding.ecovacs.internal.api.commands.GetWaterSystemPresentCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.MultiCommand;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.BatteryReport;
@@ -44,9 +39,7 @@ import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.Wate
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.Device;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse.JsonResponsePayloadWrapper;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalLoginResponse;
-import org.openhab.binding.ecovacs.internal.api.model.ChargeMode;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
-import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
 import org.openhab.binding.ecovacs.internal.api.model.ErrorDescription;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
@@ -72,15 +65,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     private final String firmwareVersion;
     private final EcovacsApiImpl api;
     private final Gson gson;
-    private final MessageHandler messageHandler;
     private Mqtt3AsyncClient mqttClient;
-    private StateChangeListener listener;
-
-    private int lastBatteryLevel;
-    private boolean wasCharging;
-    private CleanMode lastCleanMode;
-    private boolean wasWaterSystemPresent;
-    private MoppingWaterAmount lastWaterAmount;
 
     EcovacsIotMqDevice(Device device, DeviceDescription desc, EcovacsApiImpl api, Gson gson)
             throws EcovacsApiException {
@@ -89,8 +74,6 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
         this.firmwareVersion = api.sendIotCommand(device, desc, new GetFirmwareVersionCommand());
         this.api = api;
         this.gson = gson;
-        this.messageHandler = desc.usesJsonApi ? new JsonMessageHandler() : new XmlMessageHandler();
-        api.fetchCleanLogs(device);
     }
 
     @Override
@@ -141,7 +124,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     }
 
     @Override
-    public void connect(final StateChangeListener listener) throws EcovacsApiException {
+    public void listenForEvents(final EventListener listener) throws EcovacsApiException {
         EcovacsApiConfiguration config = api.getConfig();
         PortalLoginResponse loginData = api.getLoginData();
         if (loginData == null) {
@@ -158,31 +141,18 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
         MqttClientSslConfig sslConfig = MqttClientSslConfig.builder().trustManagerFactory(createTrustManagerFactory())
                 .build();
 
-        lastBatteryLevel = api.sendIotCommand(device, desc, new GetBatteryInfoCommand());
-        wasCharging = api.sendIotCommand(device, desc, new GetChargeStateCommand()) == ChargeMode.CHARGING;
-        lastCleanMode = api.sendIotCommand(device, desc, new GetCleanStateCommand());
-        if (hasCapability(DeviceCapability.MOPPING_SYSTEM)) {
-            wasWaterSystemPresent = api.sendIotCommand(device, desc, new GetWaterSystemPresentCommand());
-            lastWaterAmount = api.sendIotCommand(device, desc, new GetMoppingWaterAmountCommand());
-        }
-
-        listener.onBatteryLevelChanged(this, lastBatteryLevel);
-        listener.onChargingStateChanged(this, wasCharging);
-        listener.onCleaningModeChanged(this, lastCleanMode);
-        if (hasCapability(DeviceCapability.MOPPING_SYSTEM)) {
-            listener.onWaterSystemChanged(this, wasWaterSystemPresent, lastWaterAmount);
-        }
-
         mqttClient = MqttClient.builder().useMqttVersion3().identifier(userName + "/" + loginData.getResource())
                 .simpleAuth(auth).serverHost(host).serverPort(8883).sslConfig(sslConfig).buildAsync();
 
         mqttClient.connect().whenComplete((connAck, connError) -> {
             if (connError != null) {
-                handleMqttError(connError);
+                listener.onEventStreamFailure(this, connError);
                 return;
             }
 
             logger.debug("Established MQTT connection to device {}", getSerialNumber());
+            final MessageHandler messageHandler = desc.usesJsonApi ? new JsonMessageHandler(listener)
+                    : new XmlMessageHandler();
             String topic = String.format("iot/atr/+/%s/%s/%s/+", device.getDid(), device.getDeviceClass(),
                     device.getResource());
             mqttClient.subscribeWith().topicFilter(topic).callback(publish -> {
@@ -190,27 +160,20 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
                 try {
                     messageHandler.handleMessage(publish.getTopic().toString(), payload);
                 } catch (Exception e) {
-                    handleMqttError(e);
+                    listener.onEventStreamFailure(this, e);
                 }
             }).send().whenComplete((subAck, subError) -> {
                 if (subError != null) {
-                    handleMqttError(subError);
-                } else {
-                    this.listener = listener;
+                    listener.onEventStreamFailure(this, subError);
                 }
             });
         });
     }
 
-    public void disconnect() {
+    @Override
+    public void stopListeningForEvents() {
         if (mqttClient != null) {
             mqttClient.disconnect();
-        }
-    }
-
-    private void handleMqttError(Throwable t) {
-        if (listener != null) {
-            listener.onDeviceConnectionFailed(this, t);
         }
     }
 
@@ -246,49 +209,6 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
         };
     }
 
-    private void handleBatteryLevelUpdate(int percent) {
-        if (listener != null && percent != lastBatteryLevel) {
-            lastBatteryLevel = percent;
-            listener.onBatteryLevelChanged(this, percent);
-        }
-    }
-
-    private void handleChargingStateUpdate(boolean charging) {
-        if (listener != null && charging != wasCharging) {
-            wasCharging = charging;
-            listener.onChargingStateChanged(this, charging);
-        }
-    }
-
-    private void handleCleanModeUpdate(CleanMode mode) {
-        if (listener != null && mode != lastCleanMode) {
-            lastCleanMode = mode;
-            listener.onCleaningModeChanged(this, mode);
-        }
-    }
-
-    private void handleStatsUpdate(int area, int cleaningTimeInSeconds) {
-        if (listener != null) {
-            listener.onCleaningStatsChanged(this, area, cleaningTimeInSeconds);
-        }
-    }
-
-    private void handleWaterInfoUpdate(boolean present, int level) {
-        MoppingWaterAmount amount = MoppingWaterAmount.fromApiValue(level);
-        if (hasCapability(DeviceCapability.MOPPING_SYSTEM) && listener != null
-                && (wasWaterSystemPresent != present || lastWaterAmount != amount)) {
-            wasWaterSystemPresent = present;
-            lastWaterAmount = amount;
-            listener.onWaterSystemChanged(this, present, amount);
-        }
-    }
-
-    private void handleErrorReport(int errorCode) {
-        if (listener != null) {
-            listener.onErrorReported(this, new ErrorDescription(errorCode));
-        }
-    }
-
     private interface MessageHandler {
         void handleMessage(String topic, String payload);
     }
@@ -300,6 +220,12 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     }
 
     private class JsonMessageHandler implements MessageHandler {
+        private final EventListener listener;
+
+        JsonMessageHandler(EventListener listener) {
+            this.listener = listener;
+        }
+
         @Override
         public void handleMessage(String topic, String payload) {
             String eventName = topic.split("/")[2].toLowerCase();
@@ -323,23 +249,23 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
             switch (eventName) {
                 case "battery": {
                     BatteryReport report = payloadAs(response, BatteryReport.class);
-                    handleBatteryLevelUpdate(report.percent);
+                    listener.onBatteryLevelUpdated(EcovacsIotMqDevice.this, report.percent);
                     break;
                 }
                 case "chargestate": {
                     ChargeReport report = payloadAs(response, ChargeReport.class);
-                    handleChargingStateUpdate(report.isCharging != 0);
+                    listener.onChargingStateUpdated(EcovacsIotMqDevice.this, report.isCharging != 0);
                     break;
                 }
                 case "cleaninfo": {
                     CleanReport report = payloadAs(response, CleanReport.class);
-                    handleCleanModeUpdate(report.determineCleanMode(gson));
+                    listener.onCleaningModeUpdated(EcovacsIotMqDevice.this, report.determineCleanMode(gson));
                     break;
                 }
                 case "error": {
                     ErrorReport report = payloadAs(response, ErrorReport.class);
-                    if (!report.errorCodes.isEmpty()) {
-                        handleErrorReport(report.errorCodes.get(0));
+                    for (Integer code : report.errorCodes) {
+                        listener.onErrorReported(EcovacsIotMqDevice.this, new ErrorDescription(code));
                     }
                 }
                 case "evt": {
@@ -358,12 +284,13 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
                 }
                 case "stats": {
                     StatsReport report = payloadAs(response, StatsReport.class);
-                    handleStatsUpdate(report.area, report.timeInSeconds);
+                    listener.onCleaningStatsUpdated(EcovacsIotMqDevice.this, report.area, report.timeInSeconds);
                     break;
                 }
                 case "waterinfo": {
                     WaterInfoReport report = payloadAs(response, WaterInfoReport.class);
-                    handleWaterInfoUpdate(report.waterPlatePresent != 0, report.waterAmount);
+                    listener.onWaterSystemUpdated(EcovacsIotMqDevice.this, report.waterPlatePresent != 0,
+                            MoppingWaterAmount.fromApiValue(report.waterAmount));
                     break;
                 }
             }
