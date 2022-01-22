@@ -228,15 +228,23 @@ public final class EcovacsApiImpl implements EcovacsApi {
     public <T> T sendIotCommand(Device device, DeviceDescription desc, IotDeviceCommand<T> command)
             throws EcovacsApiException {
         boolean useJson = desc.usesJsonApi && !command.forceXmlFormat();
+        String commandName = command.getName(!useJson);
         final Object payload;
         try {
-            payload = useJson ? command.getJsonPayload(gson) : command.getXmlPayload();
+            if (useJson) {
+                payload = command.getJsonPayload(gson);
+                logger.trace("{}: Sending IOT command {} with payload {}", device.getName(), commandName,
+                        gson.toJson(payload));
+            } else {
+                payload = command.getXmlPayload();
+                logger.trace("{}: Sending IOT command {} with payload {}", device.getName(), commandName, payload);
+            }
         } catch (Exception e) {
             logger.debug("Could not convert payload for {}", command, e);
             throw new EcovacsApiException(e);
         }
 
-        PortalIotCommandRequest data = new PortalIotCommandRequest(createAuthData(), command.getName(!useJson), payload,
+        PortalIotCommandRequest data = new PortalIotCommandRequest(createAuthData(), commandName, payload,
                 device.getDid(), device.getResource(), device.getDeviceClass(), useJson);
         String json = gson.toJson(data);
         String url = EcovacsApiUrlFactory.getPortalIotDeviceManagerUrl(configuration);
@@ -244,14 +252,15 @@ public final class EcovacsApiImpl implements EcovacsApi {
                 .header(HttpHeader.CONTENT_TYPE, "application/json").content(new StringContentProvider(json));
         ContentResponse response = executeRequest(request);
 
-        logger.trace("Sent IOT command {}", json);
-        logger.trace("Got response {}", response.getContentAsString());
-
         final AbstractPortalIotCommandResponse commandResponse;
         if (useJson) {
             commandResponse = handleResponse(response, PortalIotCommandJsonResponse.class);
+            logger.trace("{}: Got response payload {}", device.getName(),
+                    ((PortalIotCommandJsonResponse) commandResponse).response);
         } else {
             commandResponse = handleResponse(response, PortalIotCommandXmlResponse.class);
+            logger.trace("{}: Got response payload {}", device.getName(),
+                    ((PortalIotCommandXmlResponse) commandResponse).getResponsePayloadXml());
         }
         if (!commandResponse.wasSuccessful()) {
             throw new EcovacsApiException("Sending IOT command " + command.getName(!useJson) + " failed: "

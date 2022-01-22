@@ -23,7 +23,7 @@ import com.google.gson.annotations.SerializedName;
  */
 public class PortalIotCommandJsonResponse extends AbstractPortalIotCommandResponse {
     @SerializedName("resp")
-    private final JsonElement response;
+    public final JsonElement response;
 
     public PortalIotCommandJsonResponse(String id, String result, JsonElement response, String failureMessage) {
         super(id, result, failureMessage);

@@ -27,6 +27,6 @@ public class PortalIotCommandXmlResponse extends AbstractPortalIotCommandRespons
     }
 
     public String getResponsePayloadXml() {
-        return responseXml;
+        return responseXml.replaceAll("\n|\r", "");
     }
 }
