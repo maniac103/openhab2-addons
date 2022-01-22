@@ -61,6 +61,7 @@ import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.PercentType;
 import org.openhab.core.library.types.QuantityType;
+import org.openhab.core.library.types.RawType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
@@ -72,6 +73,7 @@ import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.thing.binding.builder.ThingBuilder;
 import org.openhab.core.types.Command;
+import org.openhab.core.types.State;
 import org.openhab.core.types.UnDefType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +94,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     private @Nullable Boolean lastWasCharging;
     private @Nullable CleanMode lastCleanMode;
+    private @Nullable String lastCleanMapUrl;
 
     public EcovacsVacuumHandler(Thing thing) {
         super(thing);
@@ -376,8 +379,17 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                 updateState(CHANNEL_ID_LAST_CLEAN_DURATION, new QuantityType<>(record.cleaningDuration, Units.SECOND));
                 updateState(CHANNEL_ID_LAST_CLEAN_AREA, new QuantityType<>(record.cleanedArea, SIUnits.SQUARE_METRE));
                 updateState(CHANNEL_ID_LAST_CLEAN_MODE, new StringType(CLEAN_MODE_MAPPING.get(record.mode)));
-                if (record.mapImageUrl != null) {
-                    updateState(CHANNEL_ID_LAST_CLEAN_MAP, HttpUtil.downloadImage(record.mapImageUrl));
+                if (device.hasCapability(DeviceCapability.MAPPING) &&
+                        (lastCleanMapUrl == null || !lastCleanMapUrl.equals(record.mapImageUrl))) {
+                    // HttpUtil expects the server to return the correct MIME type, but Ecovacs' server doesn't obey
+                    State mapState = UnDefType.NULL;
+                    if (record.mapImageUrl != null) {
+                        RawType mapData = HttpUtil.downloadData(record.mapImageUrl, null, false, -1);
+                        if (mapData != null) {
+                            mapState = new RawType(mapData.getBytes(), "image/png");
+                        }
+                    }
+                    updateState(CHANNEL_ID_LAST_CLEAN_MAP, mapState);
                 }
             }
 
