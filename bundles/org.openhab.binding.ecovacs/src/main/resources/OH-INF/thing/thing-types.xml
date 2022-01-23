@@ -42,6 +42,8 @@
 			<channel id="current-cleaned-area" typeId="current-cleaned-area"/>
 			<channel id="water-system-present" typeId="water-system-present"/>
 			<channel id="wifi-rssi" typeId="wifi-rssi"/>
+			<channel id="error-code" typeId="error-code"/>
+			<channel id="error-description" typeId="error-description"/>
 		</channels>
 	</channel-group-type>
 
@@ -267,6 +269,20 @@
 		<item-type>Dimmer</item-type>
 		<label>Volume level of voice reports</label>
 		<state min="0" max="100" step="10"/>
+	</channel-type>
+
+	<channel-type id="error-code">
+		<item-type>Number</item-type>
+		<label>Last error code</label>
+		<description>The numerical value (code) of the last encountered error</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="error-description">
+		<item-type>String</item-type>
+		<label>Last error description</label>
+		<description>A text describing the last encountered error</description>
+		<state readOnly="true"/>
 	</channel-type>
 
 </thing:thing-descriptions>

@@ -30,6 +30,7 @@ import org.openhab.binding.ecovacs.internal.api.commands.GetBatteryInfoCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetChargeStateCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetCleanStateCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetComponentLifeSpanCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.GetErrorCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetMoppingWaterAmountCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetNetworkInfoCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetSuctionPowerCommand;
@@ -200,6 +201,9 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                 case CHANNEL_ID_WATER_PLATE_PRESENT:
                     fetchInitialWaterSystemValues();
                     break;
+                case CHANNEL_ID_ERROR_CODE:
+                case CHANNEL_ID_ERROR_DESCRIPTION:
+                    fetchInitialErrorCode();
                 default:
                     startPolling(5); // add some delay in case multiple channels are linked at once
                     break;
@@ -250,7 +254,8 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void onErrorReported(EcovacsDevice device, ErrorDescription error) {
-        // TODO
+        updateState(CHANNEL_ID_ERROR_CODE, new DecimalType(error.errorCode));
+        updateState(CHANNEL_ID_ERROR_DESCRIPTION, error.description != null ? new StringType(error.description) : UnDefType.NULL);
     }
 
     @Override
@@ -285,6 +290,13 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
             boolean present = device.sendCommand(new GetWaterSystemPresentCommand());
             MoppingWaterAmount amount = device.sendCommand(new GetMoppingWaterAmountCommand());
             onWaterSystemUpdated(device, present, amount);
+        });
+    }
+
+    private void fetchInitialErrorCode() throws EcovacsApiException {
+        doWithDevice(device -> {
+            ErrorDescription desc = device.sendCommand(new GetErrorCommand());
+            onErrorReported(device, desc);
         });
     }
 
@@ -359,6 +371,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
             fetchInitialBatteryStatus();
             fetchInitialStateAndCommandValues();
             fetchInitialWaterSystemValues(); // nop if unsupported
+            fetchInitialErrorCode();
             startPolling(0);
         });
     }
