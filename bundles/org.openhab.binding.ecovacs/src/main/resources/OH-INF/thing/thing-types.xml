@@ -55,7 +55,7 @@
 	</channel-group-type>
 
 	<channel-group-type id="total-stats">
-		<label>Device lifetime statistics</label>
+		<label>Device Lifetime Statistics</label>
 		<channels>
 			<channel id="total-cleaning-time" typeId="total-cleaning-time"/>
 			<channel id="total-cleaned-area" typeId="total-cleaned-area"/>
@@ -64,7 +64,7 @@
 	</channel-group-type>
 
 	<channel-group-type id="last-clean">
-		<label>Last clean run</label>
+		<label>Last Clean Run</label>
 		<channels>
 			<channel id="last-clean-start" typeId="last-clean-start"/>
 			<channel id="last-clean-duration" typeId="last-clean-duration"/>
@@ -131,63 +131,63 @@
 
 	<channel-type id="current-cleaning-time">
 		<item-type>Number:Time</item-type>
-		<label>Current cleaning time</label>
+		<label>Current Cleaning Time</label>
 		<description>Cleaning time in current clean cycle</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="current-cleaned-area">
 		<item-type>Number:Area</item-type>
-		<label>Current cleaned area</label>
+		<label>Current Cleaned Area</label>
 		<description>Cleaned area in current clean cycle</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="total-cleaning-time">
 		<item-type>Number:Time</item-type>
-		<label>Total cleaning time</label>
+		<label>Total Cleaning Time</label>
 		<description>Cleaning time in device life time</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="total-cleaned-area">
 		<item-type>Number:Area</item-type>
-		<label>Total cleaned area</label>
+		<label>Total Cleaned Area</label>
 		<description>Cleaned area in device life time</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="total-clean-runs">
 		<item-type>Number</item-type>
-		<label>Total clean runs</label>
+		<label>Total Clean Runs</label>
 		<description>Number of cleaning runs in device life time</description>
 		<state readOnly="true"/>
 	</channel-type>
 
 	<channel-type id="last-clean-start">
 		<item-type>DateTime</item-type>
-		<label>Last cleaning start</label>
+		<label>Last Cleaning Start</label>
 		<description>Start time of last completed cleaning run</description>
 		<state readOnly="true"/>
 	</channel-type>
 
 	<channel-type id="last-clean-duration">
 		<item-type>Number:Time</item-type>
-		<label>Last cleaning duration</label>
+		<label>Last Cleaning Duration</label>
 		<description>Duration of last completed cleaning run</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="last-clean-area">
 		<item-type>Number:Area</item-type>
-		<label>Last cleaned area</label>
+		<label>Last Cleaned Area</label>
 		<description>Cleaned area in last completed cleaning run</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="last-clean-mode">
 		<item-type>String</item-type>
-		<label>Last cleaning mode</label>
+		<label>Last Cleaning Mode</label>
 		<description>Operation mode used in last completed cleaning run</description>
 		<state readOnly="true">
 			<options>
@@ -203,14 +203,14 @@
 
 	<channel-type id="last-clean-map">
 		<item-type>Image</item-type>
-		<label>Last clean map</label>
+		<label>Last Clean Map</label>
 		<description>Cleaning map for last completed cleaning run</description>
 		<state readOnly="true"/>
 	</channel-type>
 
 	<channel-type id="suction-power">
 		<item-type>String</item-type>
-		<label>Cleaning suction power level</label>
+		<label>Cleaning Power Level</label>
 		<state>
 			<options>
 				<option value="silent">Silent</option>
@@ -223,14 +223,14 @@
 
 	<channel-type id="water-system-present">
 		<item-type>Switch</item-type>
-		<label>Water system present</label>
+		<label>Water System Present</label>
 		<description>Water plate with mop attached to device?</description>
 		<state readOnly="true"/>
 	</channel-type>
 
 	<channel-type id="water-amount" advanced="true">
 		<item-type>String</item-type>
-		<label>Mopping water amount</label>
+		<label>Mopping Water Amount</label>
 		<state>
 			<options>
 				<option value="low">Low</option>
@@ -243,44 +243,48 @@
 
 	<channel-type id="wifi-rssi" advanced="true">
 		<item-type>Number:Power</item-type>
-		<label>Wi-Fi signal strength</label>
+		<label>Wi-Fi Signal Strength</label>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="main-brush-lifetime">
 		<item-type>Number:Dimensionless</item-type>
-		<label>Remaining life time of main brush</label>
+		<label>Main Brush Lifetime</label>
+		<description>Remaining life time of main brush in percent</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="side-brush-lifetime">
 		<item-type>Number:Dimensionless</item-type>
-		<label>Remaining life time of side brush</label>
+		<label>Side Brush Lifetime</label>
+		<description>Remaining life time of side brush in percent</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="dust-filter-lifetime">
 		<item-type>Number:Dimensionless</item-type>
-		<label>Remaining life time of dust bin filter</label>
+		<label>Dust Filter Lifetime</label>
+		<description>Remaining life time of dust bin filter in percent</description>
 		<state pattern="%d %unit%" readOnly="true"></state>
 	</channel-type>
 
 	<channel-type id="voice-volume">
 		<item-type>Dimmer</item-type>
-		<label>Volume level of voice reports</label>
+		<label>Voice Volume</label>
+		<description>Volume level of voice reports</description>
 		<state min="0" max="100" step="10"/>
 	</channel-type>
 
 	<channel-type id="error-code">
 		<item-type>Number</item-type>
-		<label>Last error code</label>
+		<label>Last Error Code</label>
 		<description>The numerical value (code) of the last encountered error</description>
 		<state readOnly="true"/>
 	</channel-type>
 
 	<channel-type id="error-description">
 		<item-type>String</item-type>
-		<label>Last error description</label>
+		<label>Last Error Description</label>
 		<description>A text describing the last encountered error</description>
 		<state readOnly="true"/>
 	</channel-type>
