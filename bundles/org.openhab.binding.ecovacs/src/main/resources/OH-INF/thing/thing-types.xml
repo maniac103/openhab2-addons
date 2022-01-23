@@ -9,7 +9,7 @@
 			<bridge-type-ref id="ecovacsapi"/>
 		</supported-bridge-type-refs>
 
-		<label>Ecovacs Vaccum Cleaner</label>
+		<label>Ecovacs Vacuum Cleaner</label>
 		<description>Represents an Ecovacs vacuum cleaner</description>
 
 		<channel-groups>
@@ -108,7 +108,7 @@
 				<option value="stop">Stopped</option>
 				<option value="returning">Going to charge station</option>
 				<option value="charging">Charging</option>
-				<option value="">Idle</option>
+				<option value="idle">Idle</option>
 			</options>
 		</state>
 	</channel-type>

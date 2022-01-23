@@ -454,7 +454,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
             return "charging";
         }
         String result = CLEAN_MODE_MAPPING.get(cleanMode);
-        return result != null ? result : "";
+        return result != null ? result : "idle";
     }
 
     private @Nullable String determineCommandChannelValue(boolean charging, CleanMode cleanMode) {
