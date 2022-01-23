@@ -42,7 +42,7 @@ public class EcovacsBindingConstants {
     public static final String CHANNEL_ID_COMMAND = "actions#command";
     public static final String CHANNEL_ID_DUST_FILTER_LIFETIME = "consumables#dust-filter-lifetime";
     public static final String CHANNEL_ID_ERROR_CODE = "status#error-code";
-    public static final String CHANNEL_ID_ERROR_DESCRIPTION="status#error-description";
+    public static final String CHANNEL_ID_ERROR_DESCRIPTION = "status#error-description";
     public static final String CHANNEL_ID_LAST_CLEAN_START = "last-clean#last-clean-start";
     public static final String CHANNEL_ID_LAST_CLEAN_DURATION = "last-clean#last-clean-duration";
     public static final String CHANNEL_ID_LAST_CLEAN_AREA = "last-clean#last-clean-area";
