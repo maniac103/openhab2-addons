@@ -16,6 +16,7 @@ import static org.openhab.binding.ecovacs.internal.EcovacsBindingConstants.*;
 
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
@@ -52,10 +53,11 @@ import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.Component;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
-import org.openhab.binding.ecovacs.internal.api.model.ErrorDescription;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
 import org.openhab.binding.ecovacs.internal.api.model.NetworkInfo;
 import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
+import org.openhab.core.i18n.LocaleProvider;
+import org.openhab.core.i18n.TranslationProvider;
 import org.openhab.core.io.net.http.HttpUtil;
 import org.openhab.core.library.types.DateTimeType;
 import org.openhab.core.library.types.DecimalType;
@@ -76,6 +78,8 @@ import org.openhab.core.thing.binding.builder.ThingBuilder;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.State;
 import org.openhab.core.types.UnDefType;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,6 +93,9 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     private final Logger logger = LoggerFactory.getLogger(EcovacsVacuumHandler.class);
 
+    private final TranslationProvider i18Provider;
+    private final LocaleProvider localeProvider;
+    private final Bundle bundle;
     private @Nullable ScheduledFuture<?> reconnectFuture;
     private @Nullable ScheduledFuture<?> pollFuture;
     private @Nullable EcovacsDevice device;
@@ -97,8 +104,11 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     private @Nullable CleanMode lastCleanMode;
     private @Nullable String lastCleanMapUrl;
 
-    public EcovacsVacuumHandler(Thing thing) {
+    public EcovacsVacuumHandler(Thing thing, TranslationProvider i18Provider, LocaleProvider localeProvider) {
         super(thing);
+        this.i18Provider = i18Provider;
+        this.localeProvider = localeProvider;
+        bundle = FrameworkUtil.getBundle(getClass());
     }
 
     @Override
@@ -253,9 +263,14 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     }
 
     @Override
-    public void onErrorReported(EcovacsDevice device, ErrorDescription error) {
-        updateState(CHANNEL_ID_ERROR_CODE, new DecimalType(error.errorCode));
-        updateState(CHANNEL_ID_ERROR_DESCRIPTION, error.description != null ? new StringType(error.description) : UnDefType.NULL);
+    public void onErrorReported(EcovacsDevice device, int errorCode) {
+        updateState(CHANNEL_ID_ERROR_CODE, new DecimalType(errorCode));
+        final Locale locale = localeProvider.getLocale();
+        String errorDesc = i18Provider.getText(bundle, "ecovacs.vacuum.error-code." + errorCode, null, locale);
+        if (errorDesc == null) {
+            errorDesc = i18Provider.getText(bundle, "ecovacs.vacuum.error-code.unknown", "", locale, errorCode);
+        }
+        updateState(CHANNEL_ID_ERROR_DESCRIPTION, new StringType(errorDesc));
     }
 
     @Override
@@ -295,8 +310,8 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     private void fetchInitialErrorCode() throws EcovacsApiException {
         doWithDevice(device -> {
-            ErrorDescription desc = device.sendCommand(new GetErrorCommand());
-            onErrorReported(device, desc);
+            Integer error = device.sendCommand(new GetErrorCommand());
+            onErrorReported(device, error);
         });
     }
 

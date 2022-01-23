@@ -20,7 +20,6 @@ import org.openhab.binding.ecovacs.internal.api.commands.MultiCommand;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
-import org.openhab.binding.ecovacs.internal.api.model.ErrorDescription;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
 import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
 
@@ -42,7 +41,7 @@ public interface EcovacsDevice {
 
         void onWaterSystemUpdated(EcovacsDevice device, boolean present, MoppingWaterAmount amount);
 
-        void onErrorReported(EcovacsDevice device, ErrorDescription error);
+        void onErrorReported(EcovacsDevice device, int errorCode);
 
         void onEventStreamFailure(EcovacsDevice device, Throwable error);
     }

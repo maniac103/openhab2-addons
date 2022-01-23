@@ -41,7 +41,6 @@ import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalI
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalLoginResponse;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
-import org.openhab.binding.ecovacs.internal.api.model.ErrorDescription;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -265,7 +264,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
                 case "error": {
                     ErrorReport report = payloadAs(response, ErrorReport.class);
                     for (Integer code : report.errorCodes) {
-                        listener.onErrorReported(EcovacsIotMqDevice.this, new ErrorDescription(code));
+                        listener.onErrorReported(EcovacsIotMqDevice.this, code);
                     }
                 }
                 case "evt": {

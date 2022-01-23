@@ -16,30 +16,28 @@ import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.Erro
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
-import org.openhab.binding.ecovacs.internal.api.model.ErrorDescription;
 
 import com.google.gson.Gson;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class GetErrorCommand extends IotDeviceCommand<ErrorDescription> {
+public class GetErrorCommand extends IotDeviceCommand<Integer> {
     public GetErrorCommand() {
         super("GetError", "getError");
     }
 
     @Override
-    public ErrorDescription convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public Integer convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             ErrorReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson, ErrorReport.class);
             if (resp.errorCodes.isEmpty()) {
                 return null;
             }
-            return new ErrorDescription(resp.errorCodes.get(0));
+            return resp.errorCodes.get(0);
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            int errorCode = Integer.valueOf(getFirstXPathMatch(payload, "//@errs").getNodeValue());
-            return new ErrorDescription(errorCode);
+            return Integer.valueOf(getFirstXPathMatch(payload, "//@errs").getNodeValue());
         }
     }
 }
