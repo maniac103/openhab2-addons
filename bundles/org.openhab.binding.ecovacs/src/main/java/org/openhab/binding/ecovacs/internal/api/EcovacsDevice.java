@@ -16,7 +16,6 @@ import java.util.List;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
-import org.openhab.binding.ecovacs.internal.api.commands.MultiCommand;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
@@ -61,8 +60,6 @@ public interface EcovacsDevice {
     public void stopListeningForEvents();
 
     public <T> T sendCommand(IotDeviceCommand<T> command) throws EcovacsApiException;
-
-    public <T> T sendCommand(MultiCommand<T> command) throws EcovacsApiException;
 
     public List<CleanLogRecord> getCleanLogs() throws EcovacsApiException;
 }

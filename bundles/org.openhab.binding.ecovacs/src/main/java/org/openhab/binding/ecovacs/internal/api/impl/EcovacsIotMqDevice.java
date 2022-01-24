@@ -29,7 +29,6 @@ import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
 import org.openhab.binding.ecovacs.internal.api.commands.GetFirmwareVersionCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
-import org.openhab.binding.ecovacs.internal.api.commands.MultiCommand;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.BatteryReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.ChargeReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.CleanReport;
@@ -103,15 +102,6 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     @Override
     public <T> T sendCommand(IotDeviceCommand<T> command) throws EcovacsApiException {
         return api.sendIotCommand(device, desc, command);
-    }
-
-    @Override
-    public <T> T sendCommand(MultiCommand<T> command) throws EcovacsApiException {
-        IotDeviceCommand<?> next = command.getFirstCommand(!desc.usesJsonApi);
-        while (next != null) {
-            next = command.processResultAndGetNextCommand(api.sendIotCommand(device, desc, next));
-        }
-        return command.getResult();
     }
 
     @Override
