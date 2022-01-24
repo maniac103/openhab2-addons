@@ -215,6 +215,8 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     private class XmlMessageHandler implements MessageHandler {
         @Override
         public void handleMessage(String topic, String payload) {
+            logger.debug("{}: Got MQTT message on topic {}: {}", getSerialNumber(), topic, payload);
+            // TODO: parse XML
         }
     }
 
