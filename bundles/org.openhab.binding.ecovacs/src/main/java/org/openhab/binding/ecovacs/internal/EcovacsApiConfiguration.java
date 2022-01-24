@@ -13,7 +13,6 @@
 package org.openhab.binding.ecovacs.internal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
 
 /**
  * The {@link EcovacsApiConfiguration} class contains fields mapping thing configuration parameters.
@@ -25,5 +24,5 @@ public class EcovacsApiConfiguration {
     public String email = "";
     public String password = "";
     public String continent = "";
-    public @Nullable String installId = "";
+    public String installId = "";
 }

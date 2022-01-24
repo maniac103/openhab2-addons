@@ -15,17 +15,17 @@ package org.openhab.binding.ecovacs.internal.api.commands;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import com.google.gson.Gson;
-
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class SetMoppingWaterAmountCommand extends IotDeviceCommand<Void> {
+@NonNullByDefault
+public class SetMoppingWaterAmountCommand extends AbstractNoResponseCommand {
     private final int level;
 
     public SetMoppingWaterAmountCommand(MoppingWaterAmount amount) {
@@ -33,17 +33,15 @@ public class SetMoppingWaterAmountCommand extends IotDeviceCommand<Void> {
         this.level = amount.toApiValue();
     }
 
+    @Override
     protected void applyXmlPayload(Document doc, Element ctl) {
         ctl.setAttribute("v", String.valueOf(level));
     }
 
-    protected Object getJsonPayloadArgs() {
+    @Override
+    protected @Nullable Object getJsonPayloadArgs() {
         Map<String, Object> args = new HashMap<>();
         args.put("amount", level);
         return args;
-    }
-
-    public Void convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
-        return null;
     }
 }

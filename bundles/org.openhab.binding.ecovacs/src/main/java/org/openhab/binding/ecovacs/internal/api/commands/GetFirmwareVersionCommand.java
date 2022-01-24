@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
 import org.w3c.dom.Document;
@@ -22,6 +23,7 @@ import com.google.gson.Gson;
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class GetFirmwareVersionCommand extends IotDeviceCommand<String> {
     public GetFirmwareVersionCommand() {
         super("GetVersion", "GetVersion");

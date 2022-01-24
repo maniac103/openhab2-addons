@@ -12,9 +12,12 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class StartAutoCleaningCommand extends AbstractCleaningCommand {
     public StartAutoCleaningCommand() {
         super("s", "start", "auto");

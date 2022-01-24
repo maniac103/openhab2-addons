@@ -87,30 +87,33 @@ public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService impl
 
     @Override
     protected synchronized void stopBackgroundDiscovery() {
+        Future<?> backgroundScanFuture = this.backgroundScanFuture;
         if (backgroundScanFuture != null) {
             backgroundScanFuture.cancel(true);
-            backgroundScanFuture = null;
         }
+        this.backgroundScanFuture = null;
     }
 
     @Override
     protected synchronized void startScan() {
+        Future<?> onDemandScanFuture = this.onDemandScanFuture;
         if (onDemandScanFuture != null && !onDemandScanFuture.isDone()) {
             logger.debug("Ecovacs device discovery scan already in progress");
             return;
         }
 
         logger.debug("Starting Ecovacs discovery scan");
-        onDemandScanFuture = scheduler.submit(this::scanForDevices);
+        this.onDemandScanFuture = scheduler.submit(this::scanForDevices);
     }
 
     @Override
     public synchronized void stopScan() {
         logger.debug("Stopping Ecovacs discovery scan");
+        Future<?> onDemandScanFuture = this.onDemandScanFuture;
         if (onDemandScanFuture != null) {
             onDemandScanFuture.cancel(true);
-            onDemandScanFuture = null;
         }
+        this.onDemandScanFuture = null;
         super.stopScan();
     }
 

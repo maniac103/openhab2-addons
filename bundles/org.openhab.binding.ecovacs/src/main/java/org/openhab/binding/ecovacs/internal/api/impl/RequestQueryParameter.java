@@ -12,9 +12,12 @@
  */
 package org.openhab.binding.ecovacs.internal.api.impl;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * @author Johannes Ptaszyk - Initial contribution
  */
+@NonNullByDefault
 public class RequestQueryParameter {
 
     private RequestQueryParameter() {

@@ -16,6 +16,8 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.ComponentLifeSpanReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
@@ -32,6 +34,7 @@ import com.google.gson.reflect.TypeToken;
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class GetComponentLifeSpanCommand extends IotDeviceCommand<Integer> {
     private final Component type;
 
@@ -46,7 +49,7 @@ public class GetComponentLifeSpanCommand extends IotDeviceCommand<Integer> {
     }
 
     @Override
-    protected Object getJsonPayloadArgs() {
+    protected @Nullable Object getJsonPayloadArgs() {
         List<String> args = new ArrayList<>();
         args.add(type.jsonValue);
         return args;
@@ -83,6 +86,6 @@ public class GetComponentLifeSpanCommand extends IotDeviceCommand<Integer> {
 
     private int nodeValueToInt(String payload, String attrName) throws Exception {
         Node attr = getFirstXPathMatch(payload, "//ctl/@" + attrName);
-        return attr != null ? Integer.valueOf(attr.getNodeValue()) : -1;
+        return Integer.valueOf(attr.getNodeValue());
     }
 }

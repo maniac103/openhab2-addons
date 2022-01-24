@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.w3c.dom.Document;
@@ -23,15 +24,18 @@ import com.google.gson.annotations.SerializedName;
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class GetVolumeCommand extends IotDeviceCommand<Integer> {
     public GetVolumeCommand() {
         super("", "getVolume");
     }
 
+    @Override
     protected void applyXmlPayload(Document doc, Element ctl) {
         throw new IllegalStateException("Command only supported for JSON API");
     }
 
+    @Override
     public Integer convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             JsonResponse resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
@@ -39,7 +43,7 @@ public class GetVolumeCommand extends IotDeviceCommand<Integer> {
             return resp.volume;
         } else {
             // unsupported in XML case?
-            return null;
+            return 0;
         }
     }
 

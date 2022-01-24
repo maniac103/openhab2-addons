@@ -15,17 +15,17 @@ package org.openhab.binding.ecovacs.internal.api.commands;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import com.google.gson.Gson;
-
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class SetSuctionPowerCommand extends IotDeviceCommand<Void> {
+@NonNullByDefault
+public class SetSuctionPowerCommand extends AbstractNoResponseCommand {
     private final SuctionPower power;
 
     public SetSuctionPowerCommand(SuctionPower power) {
@@ -33,17 +33,15 @@ public class SetSuctionPowerCommand extends IotDeviceCommand<Void> {
         this.power = power;
     }
 
-    protected Object getJsonPayloadArgs() {
+    @Override
+    protected @Nullable Object getJsonPayloadArgs() {
         Map<String, Object> args = new HashMap<>();
         args.put("speed", power.toJsonValue());
         return args;
     }
 
+    @Override
     protected void applyXmlPayload(Document doc, Element ctl) {
         ctl.setAttribute("speed", power.toXmlValue());
-    }
-
-    public Void convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
-        return null;
     }
 }

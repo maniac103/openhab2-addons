@@ -67,6 +67,7 @@ public class EcovacsBindingConstants {
     public static final String CMD_STOP = "stop";
 
     public static final Map<CleanMode, String> CLEAN_MODE_MAPPING = new HashMap<>() {
+        private static final long serialVersionUID = -6828690091106259902L;
         {
             put(CleanMode.AUTO, "auto");
             put(CleanMode.EDGE, "edge");
@@ -81,6 +82,7 @@ public class EcovacsBindingConstants {
     };
 
     public static final Map<MoppingWaterAmount, String> WATER_AMOUNT_MAPPING = new HashMap<>() {
+        private static final long serialVersionUID = -1823016479841799204L;
         {
             put(MoppingWaterAmount.LOW, "low");
             put(MoppingWaterAmount.MEDIUM, "medium");
@@ -90,6 +92,7 @@ public class EcovacsBindingConstants {
     };
 
     public static final Map<SuctionPower, String> SUCTION_POWER_MAPPING = new HashMap<>() {
+        private static final long serialVersionUID = 5799339360842532357L;
         {
             put(SuctionPower.SILENT, "silent");
             put(SuctionPower.NORMAL, "normal");

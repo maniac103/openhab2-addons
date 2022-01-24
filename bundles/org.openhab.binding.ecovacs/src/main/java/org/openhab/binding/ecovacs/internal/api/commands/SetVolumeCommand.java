@@ -15,16 +15,16 @@ package org.openhab.binding.ecovacs.internal.api.commands;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import com.google.gson.Gson;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class SetVolumeCommand extends IotDeviceCommand<Void> {
+@NonNullByDefault
+public class SetVolumeCommand extends AbstractNoResponseCommand {
     private final int volume;
 
     public SetVolumeCommand(int volume) {
@@ -35,17 +35,15 @@ public class SetVolumeCommand extends IotDeviceCommand<Void> {
         this.volume = volume;
     }
 
-    protected Object getJsonPayloadArgs() {
+    @Override
+    protected @Nullable Object getJsonPayloadArgs() {
         Map<String, Object> args = new HashMap<>();
         args.put("volume", volume);
         return args;
     }
 
+    @Override
     protected void applyXmlPayload(Document doc, Element ctl) {
         throw new IllegalStateException("Command only supported for JSON API");
-    }
-
-    public Void convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
-        return null;
     }
 }

@@ -13,18 +13,22 @@
 package org.openhab.binding.ecovacs.internal.api.model;
 
 import java.util.Date;
+import java.util.Optional;
+
+import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class CleanLogRecord {
     public final Date timestamp;
     public final long cleaningDuration;
     public final int cleanedArea;
-    public final String mapImageUrl;
+    public final Optional<String> mapImageUrl;
     public final CleanMode mode;
 
-    public CleanLogRecord(long timestamp, long duration, int area, String mapImageUrl, CleanMode mode) {
+    public CleanLogRecord(long timestamp, long duration, int area, Optional<String> mapImageUrl, CleanMode mode) {
         this.timestamp = new Date(timestamp * 1000);
         this.cleaningDuration = duration;
         this.cleanedArea = area;

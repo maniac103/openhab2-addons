@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
@@ -22,6 +23,7 @@ import com.google.gson.annotations.SerializedName;
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class GetTotalStatsCommand extends IotDeviceCommand<GetTotalStatsCommand.TotalStats> {
     public class TotalStats {
         @SerializedName("area")

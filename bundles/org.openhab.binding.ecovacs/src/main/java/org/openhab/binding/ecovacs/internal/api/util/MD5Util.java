@@ -15,14 +15,15 @@ package org.openhab.binding.ecovacs.internal.api.util;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author Johannes Ptaszyk - Initial contribution
  */
+@NonNullByDefault
 public class MD5Util {
-
     private static final Logger logger = LoggerFactory.getLogger(MD5Util.class);
 
     private MD5Util() {
@@ -35,7 +36,7 @@ public class MD5Util {
             md = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
             logger.error("Could not get MD5 MessageDigest instance", e);
-            return null;
+            return "";
         }
         md.update(input.getBytes());
         byte[] hash = md.digest();

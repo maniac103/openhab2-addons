@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.MapSetReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
@@ -31,14 +33,12 @@ import com.google.gson.Gson;
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class GetMapSpotAreasWithMapIdCommand extends IotDeviceCommand<List<String>> {
     private final String mapId;
 
     public GetMapSpotAreasWithMapIdCommand(String mapId) {
         super("GetMapSet", "getMapSet");
-        if (mapId == null) {
-            throw new IllegalArgumentException("Map ID needs to be non-null");
-        }
         this.mapId = mapId;
     }
 
@@ -48,7 +48,7 @@ public class GetMapSpotAreasWithMapIdCommand extends IotDeviceCommand<List<Strin
     }
 
     @Override
-    protected Object getJsonPayloadArgs() {
+    protected @Nullable Object getJsonPayloadArgs() {
         Map<String, String> args = new HashMap<>();
         args.put("mid", mapId);
         args.put("type", "ar");

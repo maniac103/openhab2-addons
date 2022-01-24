@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.NetworkInfoReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
@@ -24,6 +25,7 @@ import com.google.gson.Gson;
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class GetNetworkInfoCommand extends IotDeviceCommand<NetworkInfo> {
     public GetNetworkInfoCommand() {
         super("GetNetInfo", "getNetInfo");

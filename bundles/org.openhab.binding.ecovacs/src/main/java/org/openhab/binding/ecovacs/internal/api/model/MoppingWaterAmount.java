@@ -12,9 +12,12 @@
  */
 package org.openhab.binding.ecovacs.internal.api.model;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public enum MoppingWaterAmount {
     LOW,
     MEDIUM,

@@ -12,11 +12,14 @@
  */
 package org.openhab.binding.ecovacs.internal.api.impl;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 import com.google.gson.annotations.SerializedName;
 
 /**
  * @author Johannes Ptaszyk - Initial contribution
  */
+@NonNullByDefault
 public enum PortalTodo {
     @SerializedName("GetDeviceList")
     GET_DEVICE_LIST,

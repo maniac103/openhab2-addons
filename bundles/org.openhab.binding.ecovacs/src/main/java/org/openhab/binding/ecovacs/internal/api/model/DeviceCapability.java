@@ -12,11 +12,14 @@
  */
 package org.openhab.binding.ecovacs.internal.api.model;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 import com.google.gson.annotations.SerializedName;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public enum DeviceCapability {
     @SerializedName("mopping_system")
     MOPPING_SYSTEM,

@@ -14,21 +14,24 @@ package org.openhab.binding.ecovacs.internal.api.impl;
 
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class DeviceDescription {
     public final String modelName;
     public final String deviceClass;
-    public final String deviceClassLink;
+    public final @Nullable String deviceClassLink;
     public final boolean usesJsonApi;
     public final boolean usesMqtt;
     public final Set<DeviceCapability> capabilities;
 
-    public DeviceDescription(String modelName, String deviceClass, String deviceClassLink, boolean usesJsonApi,
-            boolean usesMqtt, Set<DeviceCapability> capabilities) {
+    public DeviceDescription(String modelName, String deviceClass, @Nullable String deviceClassLink,
+            boolean usesJsonApi, boolean usesMqtt, Set<DeviceCapability> capabilities) {
         this.modelName = modelName;
         this.capabilities = capabilities;
         this.deviceClass = deviceClass;

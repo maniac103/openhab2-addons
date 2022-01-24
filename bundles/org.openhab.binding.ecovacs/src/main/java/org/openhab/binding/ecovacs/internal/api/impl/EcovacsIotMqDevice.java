@@ -15,6 +15,7 @@ package org.openhab.binding.ecovacs.internal.api.impl;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.ManagerFactoryParameters;
@@ -22,7 +23,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiConfiguration;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
@@ -55,6 +56,7 @@ import io.netty.handler.ssl.util.SimpleTrustManagerFactory;
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class EcovacsIotMqDevice implements EcovacsDevice {
     private final Logger logger = LoggerFactory.getLogger(EcovacsIotMqDevice.class);
 
@@ -63,7 +65,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     private final String firmwareVersion;
     private final EcovacsApiImpl api;
     private final Gson gson;
-    private Mqtt3AsyncClient mqttClient;
+    private @Nullable Mqtt3AsyncClient mqttClient;
 
     EcovacsIotMqDevice(Device device, DeviceDescription desc, EcovacsApiImpl api, Gson gson)
             throws EcovacsApiException {
@@ -107,8 +109,8 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     @Override
     public List<CleanLogRecord> getCleanLogs() throws EcovacsApiException {
         return api.fetchCleanLogs(device).stream().sorted((lhs, rhs) -> Long.compare(rhs.timestamp, lhs.timestamp))
-                .map(record -> new CleanLogRecord(record.timestamp, record.duration, record.area, record.imageUrl,
-                        record.type))
+                .map(record -> new CleanLogRecord(record.timestamp, record.duration, record.area,
+                        Optional.ofNullable(record.imageUrl), record.type))
                 .collect(Collectors.toList());
     }
 
@@ -130,10 +132,11 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
         MqttClientSslConfig sslConfig = MqttClientSslConfig.builder().trustManagerFactory(createTrustManagerFactory())
                 .build();
 
-        mqttClient = MqttClient.builder().useMqttVersion3().identifier(userName + "/" + loginData.getResource())
-                .simpleAuth(auth).serverHost(host).serverPort(8883).sslConfig(sslConfig).buildAsync();
+        final Mqtt3AsyncClient client = MqttClient.builder().useMqttVersion3()
+                .identifier(userName + "/" + loginData.getResource()).simpleAuth(auth).serverHost(host).serverPort(8883)
+                .sslConfig(sslConfig).buildAsync();
 
-        mqttClient.connect().whenComplete((connAck, connError) -> {
+        client.connect().whenComplete((connAck, connError) -> {
             if (connError != null) {
                 listener.onEventStreamFailure(this, connError);
                 return;
@@ -144,7 +147,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
                     : new XmlMessageHandler();
             String topic = String.format("iot/atr/+/%s/%s/%s/+", device.getDid(), device.getDeviceClass(),
                     device.getResource());
-            mqttClient.subscribeWith().topicFilter(topic).callback(publish -> {
+            client.subscribeWith().topicFilter(topic).callback(publish -> {
                 String payload = new String(publish.getPayloadAsBytes());
                 try {
                     messageHandler.handleMessage(publish.getTopic().toString(), payload);
@@ -157,38 +160,41 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
                 }
             });
         });
+
+        this.mqttClient = client;
     }
 
     @Override
     public void stopListeningForEvents() {
-        if (mqttClient != null) {
-            mqttClient.disconnect();
+        Mqtt3AsyncClient client = this.mqttClient;
+        if (client != null) {
+            client.disconnect();
         }
     }
 
     private TrustManagerFactory createTrustManagerFactory() {
         final TrustManager noOpTrustManager = new X509TrustManager() {
             @Override
-            public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
+            public void checkClientTrusted(final X509Certificate @Nullable [] chain, final @Nullable String authType) {
             }
 
             @Override
-            public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
+            public void checkServerTrusted(final X509Certificate @Nullable [] chain, final @Nullable String authType) {
             }
 
             @Override
             public X509Certificate[] getAcceptedIssuers() {
-                return null;
+                return new X509Certificate[0];
             }
         };
 
         return new SimpleTrustManagerFactory() {
             @Override
-            protected void engineInit(KeyStore keyStore) throws Exception {
+            protected void engineInit(@Nullable KeyStore keyStore) throws Exception {
             }
 
             @Override
-            protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws Exception {
+            protected void engineInit(@Nullable ManagerFactoryParameters managerFactoryParameters) throws Exception {
             }
 
             @Override
@@ -287,7 +293,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
             }
         }
 
-        private <T> @NonNull T payloadAs(JsonResponsePayloadWrapper response, Class<T> clazz) {
+        private <T> T payloadAs(JsonResponsePayloadWrapper response, Class<T> clazz) {
             @Nullable
             T payload = gson.fromJson(response.body.payload, clazz);
             if (payload == null) {

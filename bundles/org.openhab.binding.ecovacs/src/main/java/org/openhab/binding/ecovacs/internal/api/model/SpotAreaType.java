@@ -12,9 +12,12 @@
  */
 package org.openhab.binding.ecovacs.internal.api.model;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public enum SpotAreaType {
     LIVING_ROOM(1),
     DINING_ROOM(2),
@@ -37,13 +40,13 @@ public enum SpotAreaType {
         this.type = type;
     }
 
-    public SpotAreaType fromApiResponse(String response) throws NumberFormatException {
+    public SpotAreaType fromApiResponse(String response) throws NumberFormatException, IllegalArgumentException {
         int id = Integer.parseInt(response);
         for (SpotAreaType t : values()) {
             if (t.type == id) {
                 return t;
             }
         }
-        return null;
+        throw new IllegalArgumentException("Unknown spot area type " + response);
     }
 }

@@ -29,6 +29,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.request.portal.PortalIotCommandRequest.JsonPayloadHeader;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.w3c.dom.Document;
@@ -42,6 +44,7 @@ import com.google.gson.Gson;
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public abstract class IotDeviceCommand<RESPONSETYPE> {
     private final String xmlCommandName;
     private final String jsonCommandName;
@@ -74,6 +77,7 @@ public abstract class IotDeviceCommand<RESPONSETYPE> {
 
     public final Object getJsonPayload(Gson gson) {
         Map<String, Object> data = new HashMap<String, Object>();
+        @Nullable
         Object args = getJsonPayloadArgs();
         data.put("header", new JsonPayloadHeader());
         if (args != null) {
@@ -84,7 +88,7 @@ public abstract class IotDeviceCommand<RESPONSETYPE> {
         return data;
     }
 
-    protected Object getJsonPayloadArgs() {
+    protected @Nullable Object getJsonPayloadArgs() {
         return null;
     }
 

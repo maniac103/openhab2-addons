@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.CleanReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
@@ -23,6 +24,7 @@ import com.google.gson.Gson;
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class GetCleanStateCommand extends IotDeviceCommand<CleanMode> {
     public GetCleanStateCommand() {
         super("GetCleanState", "getCleanInfo");
@@ -35,8 +37,12 @@ public class GetCleanStateCommand extends IotDeviceCommand<CleanMode> {
             return resp.determineCleanMode(gson);
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            String mode = getFirstXPathMatch(payload, "//clean/@type").getNodeValue();
-            return gson.fromJson(mode, CleanMode.class);
+            String modeString = getFirstXPathMatch(payload, "//clean/@type").getNodeValue();
+            CleanMode mode = gson.fromJson(modeString, CleanMode.class);
+            if (mode == null) {
+                throw new IllegalArgumentException("Could not parse clean mode " + modeString);
+            }
+            return mode;
         }
     }
 }

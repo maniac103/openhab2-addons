@@ -12,9 +12,12 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class ResumeCleaningCommand extends AbstractCleaningCommand {
     public ResumeCleaningCommand() {
         super("r", "resume", null);

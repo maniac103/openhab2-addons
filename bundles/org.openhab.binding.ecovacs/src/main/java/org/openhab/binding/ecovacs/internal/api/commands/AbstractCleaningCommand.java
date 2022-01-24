@@ -14,51 +14,43 @@ package org.openhab.binding.ecovacs.internal.api.commands;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import com.google.gson.Gson;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
-public abstract class AbstractCleaningCommand extends IotDeviceCommand<Void> {
+@NonNullByDefault
+abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
     private final String xmlAction;
     private final String jsonAction;
-    private final String mode;
+    private final Optional<String> mode;
 
-    protected AbstractCleaningCommand(String xmlAction, String jsonAction, String mode) {
+    protected AbstractCleaningCommand(String xmlAction, String jsonAction, @Nullable String mode) {
         super("Clean", "clean");
         this.xmlAction = xmlAction;
         this.jsonAction = jsonAction;
-        this.mode = mode;
+        this.mode = Optional.ofNullable(mode);
     }
 
     @Override
     protected void applyXmlPayload(Document doc, Element ctl) {
         Element clean = doc.createElement("clean");
-        if (mode != null) {
-            clean.setAttribute("type", mode);
-        }
+        mode.ifPresent(m -> clean.setAttribute("type", m));
         clean.setAttribute("speed", "standard");
         clean.setAttribute("act", xmlAction);
         ctl.appendChild(clean);
     }
 
     @Override
-    protected Object getJsonPayloadArgs() {
+    protected @Nullable Object getJsonPayloadArgs() {
         Map<String, String> args = new HashMap<>();
         args.put("act", jsonAction);
-        if (mode != null) {
-            args.put("type", mode);
-        }
+        mode.ifPresent(m -> args.put("type", m));
         return args;
-    }
-
-    @Override
-    public Void convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
-        return null;
     }
 }

@@ -12,18 +12,19 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.ChargeReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
 import org.openhab.binding.ecovacs.internal.api.model.ChargeMode;
-import org.w3c.dom.Node;
 
 import com.google.gson.Gson;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class GetChargeStateCommand extends IotDeviceCommand<ChargeMode> {
     public GetChargeStateCommand() {
         super("GetChargeState", "getChargeState");
@@ -37,8 +38,12 @@ public class GetChargeStateCommand extends IotDeviceCommand<ChargeMode> {
             return resp.isCharging != 0 ? ChargeMode.CHARGING : ChargeMode.IDLE;
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            Node typeAttr = getFirstXPathMatch(payload, "//charge/@type");
-            return gson.fromJson(typeAttr.getNodeValue(), ChargeMode.class);
+            String modeString = getFirstXPathMatch(payload, "//charge/@type").getNodeValue();
+            ChargeMode mode = gson.fromJson(modeString, ChargeMode.class);
+            if (mode == null) {
+                throw new IllegalArgumentException("Could not parse charge mode " + modeString);
+            }
+            return mode;
         }
     }
 }

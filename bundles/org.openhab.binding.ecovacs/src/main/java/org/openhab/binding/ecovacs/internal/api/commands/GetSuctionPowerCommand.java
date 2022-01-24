@@ -12,18 +12,19 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.SpeedReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
 import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
-import org.w3c.dom.Node;
 
 import com.google.gson.Gson;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
+@NonNullByDefault
 public class GetSuctionPowerCommand extends IotDeviceCommand<SuctionPower> {
     public GetSuctionPowerCommand() {
         super("GetCleanSpeed", "getSpeed");
@@ -36,8 +37,12 @@ public class GetSuctionPowerCommand extends IotDeviceCommand<SuctionPower> {
             return SuctionPower.fromJsonValue(resp.speedLevel);
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            Node speedAttr = getFirstXPathMatch(payload, "//@speed"); // TODO: verify this
-            return gson.fromJson(speedAttr.getNodeValue(), SuctionPower.class);
+            String levelString = getFirstXPathMatch(payload, "//@speed").getNodeValue(); // TODO: verify this
+            SuctionPower level = gson.fromJson(levelString, SuctionPower.class);
+            if (level == null) {
+                throw new IllegalArgumentException("Could not parse power level " + levelString);
+            }
+            return level;
         }
     }
 }

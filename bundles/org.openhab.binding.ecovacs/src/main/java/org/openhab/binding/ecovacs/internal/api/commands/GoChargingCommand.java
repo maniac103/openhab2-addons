@@ -15,16 +15,16 @@ package org.openhab.binding.ecovacs.internal.api.commands;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import com.google.gson.Gson;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class GoChargingCommand extends IotDeviceCommand<Void> {
+@NonNullByDefault
+public class GoChargingCommand extends AbstractNoResponseCommand {
     public GoChargingCommand() {
         super("Charge", "charge");
     }
@@ -37,14 +37,9 @@ public class GoChargingCommand extends IotDeviceCommand<Void> {
     }
 
     @Override
-    protected Object getJsonPayloadArgs() {
+    protected @Nullable Object getJsonPayloadArgs() {
         Map<String, String> args = new HashMap<>();
         args.put("act", "go");
         return args;
-    }
-
-    @Override
-    public Void convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
-        return null;
     }
 }

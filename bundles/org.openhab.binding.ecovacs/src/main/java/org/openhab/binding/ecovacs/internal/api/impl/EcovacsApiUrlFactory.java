@@ -12,11 +12,13 @@
  */
 package org.openhab.binding.ecovacs.internal.api.impl;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiConfiguration;
 
 /**
  * @author Johannes Ptaszyk - Initial contribution
  */
+@NonNullByDefault
 public final class EcovacsApiUrlFactory {
 
     private EcovacsApiUrlFactory() {

@@ -27,6 +27,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApi;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
+import org.openhab.binding.ecovacs.internal.api.commands.AbstractNoResponseCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetBatteryInfoCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetChargeStateCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetCleanStateCommand;
@@ -40,7 +41,6 @@ import org.openhab.binding.ecovacs.internal.api.commands.GetTotalStatsCommand.To
 import org.openhab.binding.ecovacs.internal.api.commands.GetVolumeCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetWaterSystemPresentCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GoChargingCommand;
-import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.PauseCleaningCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.ResumeCleaningCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.SetMoppingWaterAmountCommand;
@@ -102,7 +102,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     private @Nullable Boolean lastWasCharging;
     private @Nullable CleanMode lastCleanMode;
-    private @Nullable String lastCleanMapUrl;
+    private Optional<String> lastCleanMapUrl = Optional.empty();
 
     public EcovacsVacuumHandler(Thing thing, TranslationProvider i18Provider, LocaleProvider localeProvider) {
         super(thing);
@@ -122,7 +122,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
         try {
             if (channel.equals(CHANNEL_ID_COMMAND) && command instanceof StringType) {
-                IotDeviceCommand<Void> cmd = determineDeviceCommand(device, command.toString());
+                AbstractNoResponseCommand cmd = determineDeviceCommand(device, command.toString());
                 if (cmd != null) {
                     device.sendCommand(cmd);
                     return;
@@ -310,8 +310,10 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     private void fetchInitialErrorCode() throws EcovacsApiException {
         doWithDevice(device -> {
-            Integer error = device.sendCommand(new GetErrorCommand());
-            onErrorReported(device, error);
+            Optional<Integer> errorOpt = device.sendCommand(new GetErrorCommand());
+            if (errorOpt.isPresent()) {
+                onErrorReported(device, errorOpt.get());
+            }
         });
     }
 
@@ -407,17 +409,18 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                 updateState(CHANNEL_ID_LAST_CLEAN_DURATION, new QuantityType<>(record.cleaningDuration, Units.SECOND));
                 updateState(CHANNEL_ID_LAST_CLEAN_AREA, new QuantityType<>(record.cleanedArea, SIUnits.SQUARE_METRE));
                 updateState(CHANNEL_ID_LAST_CLEAN_MODE, new StringType(CLEAN_MODE_MAPPING.get(record.mode)));
-                if (device.hasCapability(DeviceCapability.MAPPING)
-                        && (lastCleanMapUrl == null || !lastCleanMapUrl.equals(record.mapImageUrl))) {
+                if (device.hasCapability(DeviceCapability.MAPPING) && !lastCleanMapUrl.equals(record.mapImageUrl)) {
                     // HttpUtil expects the server to return the correct MIME type, but Ecovacs' server doesn't obey
-                    State mapState = UnDefType.NULL;
-                    if (record.mapImageUrl != null) {
-                        RawType mapData = HttpUtil.downloadData(record.mapImageUrl, null, false, -1);
+                    State mapState = record.mapImageUrl.flatMap(url -> {
+                        @Nullable
+                        RawType mapData = HttpUtil.downloadData(record.mapImageUrl.get(), null, false, -1);
                         if (mapData != null) {
-                            mapState = new RawType(mapData.getBytes(), "image/png");
+                            mapData = new RawType(mapData.getBytes(), "image/png");
                         }
-                    }
+                        return Optional.ofNullable((State) mapData);
+                    }).orElse(UnDefType.NULL);
                     updateState(CHANNEL_ID_LAST_CLEAN_MAP, mapState);
+                    lastCleanMapUrl = record.mapImageUrl;
                 }
             }
 
@@ -491,7 +494,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         return null;
     }
 
-    private @Nullable IotDeviceCommand<Void> determineDeviceCommand(EcovacsDevice device, String command) {
+    private @Nullable AbstractNoResponseCommand determineDeviceCommand(EcovacsDevice device, String command) {
         switch (command) {
             case CMD_AUTO_CLEAN:
                 return new StartAutoCleaningCommand();

@@ -12,9 +12,12 @@
  */
 package org.openhab.binding.ecovacs.internal.api;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * @author Johannes Ptaszyk - Initial contribution
  */
+@NonNullByDefault
 public class ClientKeys {
 
     private ClientKeys() {
