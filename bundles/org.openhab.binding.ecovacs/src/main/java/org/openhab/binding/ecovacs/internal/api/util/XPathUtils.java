@@ -22,6 +22,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -30,29 +31,36 @@ import org.xml.sax.InputSource;
  * @author Danny Baumann - Initial contribution
  */
 @NonNullByDefault
-public class XPathParser {
-    private final InputSource input;
-    private final XPath xPath = XPathFactory.newInstance().newXPath();
+public class XPathUtils {
+    private static @Nullable XPathFactory FACTORY;
 
-    public XPathParser(String xml) {
-        this.input = new InputSource(new StringReader(xml));
-    }
-
-    public Node getFirstXPathMatch(String xpathExpression) throws XPathExpressionException, NoSuchElementException {
-        NodeList nodes = getXPathMatches(xpathExpression);
+    public static Node getFirstXPathMatch(String xml, String xpathExpression)
+            throws XPathExpressionException, NoSuchElementException {
+        NodeList nodes = getXPathMatches(xml, xpathExpression);
         if (nodes.getLength() == 0) {
             throw new NoSuchElementException();
         }
         return nodes.item(0);
     }
 
-    public Optional<Node> getFirstXPathMatchOpt(String xpathExpression)
+    public static Optional<Node> getFirstXPathMatchOpt(String xml, String xpathExpression)
             throws XPathExpressionException, NoSuchElementException {
-        NodeList nodes = getXPathMatches(xpathExpression);
+        NodeList nodes = getXPathMatches(xml, xpathExpression);
         return nodes.getLength() == 0 ? Optional.empty() : Optional.of(nodes.item(0));
     }
 
-    public NodeList getXPathMatches(String xpathExpression) throws XPathExpressionException, NoSuchElementException {
-        return (NodeList) xPath.evaluate(xpathExpression, input, XPathConstants.NODESET);
+    public static NodeList getXPathMatches(String xml, String xpathExpression)
+            throws XPathExpressionException, NoSuchElementException {
+        InputSource source = new InputSource(new StringReader(xml));
+        return (NodeList) newXPath().evaluate(xpathExpression, source, XPathConstants.NODESET);
+    }
+
+    private static XPath newXPath() {
+        synchronized (XPathUtils.class) {
+            if (FACTORY == null) {
+                FACTORY = XPathFactory.newInstance();
+            }
+            return FACTORY.newXPath();
+        }
     }
 }

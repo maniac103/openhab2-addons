@@ -24,7 +24,7 @@ import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
-import org.openhab.binding.ecovacs.internal.api.util.XPathParser;
+import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -64,7 +64,7 @@ public class GetMapSpotAreasWithMapIdCommand extends IotDeviceCommand<List<Strin
             return resp.subsets.stream().map(i -> i.id).collect(Collectors.toList());
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            NodeList mapIds = new XPathParser(payload).getXPathMatches("//m/@mid");
+            NodeList mapIds = XPathUtils.getXPathMatches(payload, "//m/@mid");
             List<String> result = new ArrayList<>();
             for (int i = 0; i < mapIds.getLength(); i++) {
                 result.add(mapIds.item(i).getNodeValue());

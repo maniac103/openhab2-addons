@@ -46,7 +46,7 @@ import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
-import org.openhab.binding.ecovacs.internal.api.util.XPathParser;
+import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -223,8 +223,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
         @Override
         public void handleMessage(String topic, String payload) throws Exception {
             logger.debug("{}: Got MQTT message on topic {}: {}", getSerialNumber(), topic, payload);
-            XPathParser parser = new XPathParser(payload);
-            String event = parser.getFirstXPathMatch("//@td").getNodeValue();
+            String event = XPathUtils.getFirstXPathMatch(payload, "//@td").getNodeValue();
 
             switch (event.toLowerCase()) {
                 case "batteryinfo":
@@ -242,8 +241,8 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
                     break;
                 }
                 case "cleanst": {
-                    String area = parser.getFirstXPathMatch("//@a").getNodeValue();
-                    String duration = parser.getFirstXPathMatch("//@l").getNodeValue();
+                    String area = XPathUtils.getFirstXPathMatch(payload, "//@a").getNodeValue();
+                    String duration = XPathUtils.getFirstXPathMatch(payload, "//@l").getNodeValue();
                     listener.onCleaningStatsUpdated(EcovacsIotMqDevice.this, Integer.valueOf(area),
                             Integer.valueOf(duration));
                     break;

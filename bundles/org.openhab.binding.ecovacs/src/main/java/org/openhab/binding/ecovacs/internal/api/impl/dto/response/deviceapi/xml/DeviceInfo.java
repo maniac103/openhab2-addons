@@ -17,7 +17,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.model.ChargeMode;
-import org.openhab.binding.ecovacs.internal.api.util.XPathParser;
+import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
 import org.w3c.dom.Node;
 
 import com.google.gson.Gson;
@@ -30,12 +30,12 @@ public class DeviceInfo {
     private static final Set<String> ERROR_ATTR_NAMES = Set.of("code", "error", "errno", "errs");
 
     public static int parseBatteryInfo(String xml) throws Exception {
-        Node batteryAttr = new XPathParser(xml).getFirstXPathMatch("//battery/@power");
+        Node batteryAttr = XPathUtils.getFirstXPathMatch(xml, "//battery/@power");
         return Integer.valueOf(batteryAttr.getNodeValue());
     }
 
     public static ChargeMode parseChargeInfo(String xml, Gson gson) throws Exception {
-        String modeString = new XPathParser(xml).getFirstXPathMatch("//charge/@type").getNodeValue();
+        String modeString = XPathUtils.getFirstXPathMatch(xml, "//charge/@type").getNodeValue();
         ChargeMode mode = gson.fromJson(modeString, ChargeMode.class);
         if (mode == null) {
             throw new IllegalArgumentException("Could not parse charge mode " + modeString);
@@ -44,9 +44,8 @@ public class DeviceInfo {
     }
 
     public static Optional<Integer> parseErrorInfo(String xml) throws Exception {
-        XPathParser parser = new XPathParser(xml);
         for (String attr : ERROR_ATTR_NAMES) {
-            Optional<Node> node = parser.getFirstXPathMatchOpt("//@" + attr);
+            Optional<Node> node = XPathUtils.getFirstXPathMatchOpt(xml, "//@" + attr);
             if (node.isPresent()) {
                 return node.map(n -> Integer.valueOf(n.getNodeValue()));
             }
@@ -55,10 +54,9 @@ public class DeviceInfo {
     }
 
     public static int parseComponentLifespanInfo(String xml) throws Exception {
-        XPathParser parser = new XPathParser(xml);
-        Optional<Integer> value = nodeValueToInt(parser, "value");
-        Optional<Integer> total = nodeValueToInt(parser, "total");
-        Optional<Integer> left = nodeValueToInt(parser, "left");
+        Optional<Integer> value = nodeValueToInt(xml, "value");
+        Optional<Integer> total = nodeValueToInt(xml, "total");
+        Optional<Integer> left = nodeValueToInt(xml, "left");
         if (value.isPresent() && total.isPresent()) {
             return (int) Math.round(100.0 * value.get() / total.get());
         } else if (value.isPresent()) {
@@ -71,7 +69,7 @@ public class DeviceInfo {
         return 0;
     }
 
-    private static Optional<Integer> nodeValueToInt(XPathParser parser, String attrName) throws Exception {
-        return parser.getFirstXPathMatchOpt("//ctl/@" + attrName).map(n -> Integer.valueOf(n.getNodeValue()));
+    private static Optional<Integer> nodeValueToInt(String xml, String attrName) throws Exception {
+        return XPathUtils.getFirstXPathMatchOpt(xml, "//ctl/@" + attrName).map(n -> Integer.valueOf(n.getNodeValue()));
     }
 }

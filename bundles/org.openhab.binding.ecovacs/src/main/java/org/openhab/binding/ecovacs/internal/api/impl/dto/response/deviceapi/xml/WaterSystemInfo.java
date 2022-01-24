@@ -14,7 +14,7 @@ package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
-import org.openhab.binding.ecovacs.internal.api.util.XPathParser;
+import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
 import org.w3c.dom.Node;
 
 /**
@@ -24,12 +24,12 @@ import org.w3c.dom.Node;
 public class WaterSystemInfo {
     // returns whether water system is present
     public static boolean parseWaterBoxInfo(String xml) throws Exception {
-        Node node = new XPathParser(xml).getFirstXPathMatch("//@on");
+        Node node = XPathUtils.getFirstXPathMatch(xml, "//@on");
         return Integer.valueOf(node.getNodeValue()) != 0;
     }
 
     public static MoppingWaterAmount parseWaterPermeabilityInfo(String xml) throws Exception {
-        Node node = new XPathParser(xml).getFirstXPathMatch("//@v");
+        Node node = XPathUtils.getFirstXPathMatch(xml, "//@v");
         return MoppingWaterAmount.fromApiValue(Integer.valueOf(node.getNodeValue()));
     }
 }

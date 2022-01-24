@@ -15,7 +15,7 @@ package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
-import org.openhab.binding.ecovacs.internal.api.util.XPathParser;
+import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
 
 import com.google.gson.Gson;
 
@@ -25,8 +25,7 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class CleaningInfo {
     public static CleanMode parseCleanStateInfo(String xml, Gson gson) throws Exception {
-        XPathParser parser = new XPathParser(xml);
-        String stateString = parser.getFirstXPathMatch("//clean/@st").getNodeValue();
+        String stateString = XPathUtils.getFirstXPathMatch(xml, "//clean/@st").getNodeValue();
         final CleanMode mode;
 
         if ("h".equals(stateString)) {
@@ -34,7 +33,7 @@ public class CleaningInfo {
         } else if ("p".equals(stateString)) {
             mode = CleanMode.PAUSE;
         } else {
-            String modeString = parser.getFirstXPathMatch("//clean/@type").getNodeValue();
+            String modeString = XPathUtils.getFirstXPathMatch(xml, "//clean/@type").getNodeValue();
             mode = gson.fromJson(modeString, CleanMode.class);
         }
         if (mode != null) {
@@ -44,7 +43,7 @@ public class CleaningInfo {
     }
 
     public static SuctionPower parseCleanSpeedInfo(String xml, Gson gson) throws Exception {
-        String levelString = new XPathParser(xml).getFirstXPathMatch("//@speed").getNodeValue();
+        String levelString = XPathUtils.getFirstXPathMatch(xml, "//@speed").getNodeValue();
         SuctionPower level = gson.fromJson(levelString, SuctionPower.class);
         if (level == null) {
             throw new IllegalArgumentException("Could not parse power level " + levelString);

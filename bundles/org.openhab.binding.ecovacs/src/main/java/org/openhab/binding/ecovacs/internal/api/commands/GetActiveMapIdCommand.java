@@ -17,7 +17,7 @@ import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
-import org.openhab.binding.ecovacs.internal.api.util.XPathParser;
+import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
 
 import com.google.gson.Gson;
 
@@ -38,7 +38,7 @@ public class GetActiveMapIdCommand extends IotDeviceCommand<String> {
             return resp.mapInfos.stream().filter(i -> i.used != 0).map(i -> i.mapId).findFirst().orElse("");
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            return new XPathParser(payload).getFirstXPathMatch("//@i").getNodeValue();
+            return XPathUtils.getFirstXPathMatch(payload, "//@i").getNodeValue();
         }
     }
 }
