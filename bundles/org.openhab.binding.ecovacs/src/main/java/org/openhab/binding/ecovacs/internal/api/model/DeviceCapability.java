@@ -36,5 +36,7 @@ public enum DeviceCapability {
     @SerializedName("mapping")
     MAPPING,
     @SerializedName("auto_empty_station")
-    AUTO_EMPTY_STATION
+    AUTO_EMPTY_STATION,
+    @SerializedName("read_network_info")
+    READ_NETWORK_INFO
 }

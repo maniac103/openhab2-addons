@@ -337,6 +337,9 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         if (!device.hasCapability(DeviceCapability.MAPPING)) {
             hasChanges |= removeUnsupportedChannel(builder, CHANNEL_ID_LAST_CLEAN_MAP);
         }
+        if (!device.hasCapability(DeviceCapability.READ_NETWORK_INFO)) {
+            hasChanges |= removeUnsupportedChannel(builder, CHANNEL_ID_WIFI_RSSI);
+        }
 
         if (hasChanges) {
             updateThing(builder.build());
@@ -434,9 +437,11 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                 updateState(CHANNEL_ID_WATER_AMOUNT, new StringType(WATER_AMOUNT_MAPPING.get(waterAmount)));
             }
 
-            NetworkInfo netInfo = device.sendCommand(new GetNetworkInfoCommand());
-            if (netInfo.wifiRssi != 0) {
-                updateState(CHANNEL_ID_WIFI_RSSI, new QuantityType<>(netInfo.wifiRssi, Units.DECIBEL_MILLIWATTS));
+            if (device.hasCapability(DeviceCapability.READ_NETWORK_INFO)) {
+                NetworkInfo netInfo = device.sendCommand(new GetNetworkInfoCommand());
+                if (netInfo.wifiRssi != 0) {
+                    updateState(CHANNEL_ID_WIFI_RSSI, new QuantityType<>(netInfo.wifiRssi, Units.DECIBEL_MILLIWATTS));
+                }
             }
 
             int sideBrushPercent = device.sendCommand(new GetComponentLifeSpanCommand(Component.SIDE_BRUSH));
