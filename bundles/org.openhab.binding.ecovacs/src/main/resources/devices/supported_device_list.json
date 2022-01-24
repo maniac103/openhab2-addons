@@ -1,5 +1,16 @@
 [
     {
+        "modelName": "DEEBOT OZMO Slim10 Series",
+        "deviceClass": "02uwxm",
+        "usesJsonApi": false,
+        "usesMqtt": true,
+        "capabilities": [
+            "mopping_system",
+            "clean_speed_control"
+        ]
+    },
+
+    {
         "modelName": "DEEBOT OZMO 950 Series",
         "deviceClass": "yna5xi",
         "usesJsonApi": true,
