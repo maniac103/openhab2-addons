@@ -166,10 +166,10 @@ public final class EcovacsApiImpl implements EcovacsApi {
                 if (products == null) {
                     products = getIotProductMap();
                 }
-                Optional<IotProduct> product = products.stream()
-                        .filter(prod -> dev.getDeviceClass().equals(prod.getClassId())).findFirst();
-                logger.info("Found unsupported device {} (class {}), ignoring.",
-                        product.isPresent() ? product.get().getDefinition().name : "UNKNOWN", dev.getDeviceClass());
+                String modelName = products.stream().filter(prod -> dev.getDeviceClass().equals(prod.getClassId()))
+                        .findFirst().map(p -> p.getDefinition().name).orElse("UNKNOWN");
+                logger.info("Found unsupported device {} (class {}, company {}), ignoring.", modelName,
+                        dev.getDeviceClass(), dev.getCompany());
                 continue;
             }
             DeviceDescription desc = descOpt.get();
