@@ -10,20 +10,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi;
+package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json;
+
+import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class ComponentLifeSpanReport {
-    @SerializedName("type")
-    public String type;
-
-    @SerializedName("left")
-    public int left;
-
-    @SerializedName("total")
-    public int total;
+public class ErrorReport {
+    @SerializedName("code")
+    public List<Integer> errorCodes;
 }

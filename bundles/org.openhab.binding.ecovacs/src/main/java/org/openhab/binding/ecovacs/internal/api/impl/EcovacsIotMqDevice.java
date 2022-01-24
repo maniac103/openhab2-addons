@@ -30,18 +30,23 @@ import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
 import org.openhab.binding.ecovacs.internal.api.commands.GetFirmwareVersionCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.BatteryReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.ChargeReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.CleanReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.ErrorReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.StatsReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.WaterInfoReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.BatteryReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ChargeReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.CleanReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ErrorReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.StatsReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.WaterInfoReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.CleaningInfo;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.DeviceInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.Device;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse.JsonResponsePayloadWrapper;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalLoginResponse;
+import org.openhab.binding.ecovacs.internal.api.model.ChargeMode;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
+import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
+import org.openhab.binding.ecovacs.internal.api.util.XPathParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,7 +149,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
 
             logger.debug("Established MQTT connection to device {}", getSerialNumber());
             final MessageHandler messageHandler = desc.usesJsonApi ? new JsonMessageHandler(listener)
-                    : new XmlMessageHandler();
+                    : new XmlMessageHandler(listener);
             String topic = String.format("iot/atr/+/%s/%s/%s/+", device.getDid(), device.getDeviceClass(),
                     device.getResource());
             client.subscribeWith().topicFilter(topic).callback(publish -> {
@@ -205,14 +210,56 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     }
 
     private interface MessageHandler {
-        void handleMessage(String topic, String payload);
+        void handleMessage(String topic, String payload) throws Exception;
     }
 
     private class XmlMessageHandler implements MessageHandler {
+        private final EventListener listener;
+
+        XmlMessageHandler(EventListener listener) {
+            this.listener = listener;
+        }
+
         @Override
-        public void handleMessage(String topic, String payload) {
+        public void handleMessage(String topic, String payload) throws Exception {
             logger.debug("{}: Got MQTT message on topic {}: {}", getSerialNumber(), topic, payload);
-            // TODO: parse XML
+            XPathParser parser = new XPathParser(payload);
+            String event = parser.getFirstXPathMatch("//@td").getNodeValue();
+
+            switch (event.toLowerCase()) {
+                case "batteryinfo":
+                    listener.onBatteryLevelUpdated(EcovacsIotMqDevice.this, DeviceInfo.parseBatteryInfo(payload));
+                    break;
+                case "chargestate": {
+                    ChargeMode mode = DeviceInfo.parseChargeInfo(payload, gson);
+                    listener.onChargingStateUpdated(EcovacsIotMqDevice.this, mode == ChargeMode.CHARGING);
+                    break;
+                }
+                case "cleanreport": {
+                    CleanMode mode = CleaningInfo.parseCleanStateInfo(payload, gson);
+                    listener.onCleaningModeUpdated(EcovacsIotMqDevice.this, mode);
+                    // TODO: speed <ctl td='CleanReport'><clean type='auto' speed='standard' st='s' rsn='a'/></ctl>
+                    break;
+                }
+                case "cleanst": {
+                    String area = parser.getFirstXPathMatch("//@a").getNodeValue();
+                    String duration = parser.getFirstXPathMatch("//@l").getNodeValue();
+                    listener.onCleaningStatsUpdated(EcovacsIotMqDevice.this, Integer.valueOf(area),
+                            Integer.valueOf(duration));
+                    break;
+                }
+                case "error":
+                    DeviceInfo.parseErrorInfo(payload).ifPresent(errorCode -> {
+                        listener.onErrorReported(EcovacsIotMqDevice.this, errorCode);
+                    });
+                    break;
+            }
+            // TODO: need to update water system info
+            // TODO:
+            // <ctl td='CleanRptBgdata' ts='1643044172' Battery='102' CleanID='1333688018' iCleanID='0497265223'
+            // MapID='1430814334' rsn='a' IsFrmCharger='1' CleanType='auto' Speed='standard' OnOffRag='0' WorkMode='s'
+            // Spray='2' WorkArea='002'/>
+            // <ctl ts='1643037483' td='SleepStatus' st='0'/>
         }
     }
 

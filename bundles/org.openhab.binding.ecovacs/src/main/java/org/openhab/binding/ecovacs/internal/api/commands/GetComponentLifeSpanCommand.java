@@ -18,14 +18,14 @@ import java.util.List;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.ComponentLifeSpanReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ComponentLifeSpanReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.DeviceInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
 import org.openhab.binding.ecovacs.internal.api.model.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -68,24 +68,7 @@ public class GetComponentLifeSpanCommand extends IotDeviceCommand<Integer> {
             return (int) Math.round(100.0 * resp.get(0).left / resp.get(0).total);
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            int value = nodeValueToInt(payload, "value");
-            int total = nodeValueToInt(payload, "total");
-            int left = nodeValueToInt(payload, "left");
-            if (value >= 0 && total >= 0) {
-                return (int) Math.round(100.0 * value / total);
-            } else if (value >= 0) {
-                return (int) Math.round(0.01 * value);
-            } else if (left >= 0 && total >= 0) {
-                return (int) Math.round(100.0 * left / total);
-            } else if (left >= 0) {
-                return (int) Math.round((double) left / 60.0);
-            }
-            return -1;
+            return DeviceInfo.parseComponentLifespanInfo(payload);
         }
-    }
-
-    private int nodeValueToInt(String payload, String attrName) throws Exception {
-        Node attr = getFirstXPathMatch(payload, "//ctl/@" + attrName);
-        return Integer.valueOf(attr.getNodeValue());
     }
 }

@@ -10,14 +10,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi;
-
-import com.google.gson.annotations.SerializedName;
+package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class SleepReport {
-    @SerializedName("enable")
-    public int sleeping;
+public class NetworkInfoReport {
+    public String ip;
+    public String mac;
+    public String ssid;
+    public String rssi;
 }

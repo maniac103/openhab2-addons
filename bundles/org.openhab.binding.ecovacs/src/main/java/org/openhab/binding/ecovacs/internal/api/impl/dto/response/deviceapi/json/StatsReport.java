@@ -10,16 +10,22 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi;
+package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json;
 
 import com.google.gson.annotations.SerializedName;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class BatteryReport {
-    @SerializedName("value")
-    public int percent;
-    @SerializedName("isLow")
-    public int batteryIsLow;
+public class StatsReport {
+    @SerializedName("area")
+    public int area;
+    @SerializedName("time")
+    public int timeInSeconds;
+    @SerializedName("cid")
+    public String cid;
+    @SerializedName("start")
+    public long startTimestamp;
+    @SerializedName("type")
+    public String type; // auto, ... ?
 }

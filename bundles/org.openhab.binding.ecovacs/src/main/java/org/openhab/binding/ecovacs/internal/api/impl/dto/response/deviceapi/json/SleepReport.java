@@ -10,14 +10,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi;
+package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json;
 
 import com.google.gson.annotations.SerializedName;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class SpeedReport {
-    @SerializedName("speed")
-    public int speedLevel;
+public class SleepReport {
+    @SerializedName("enable")
+    public int sleeping;
 }

@@ -16,6 +16,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
+import org.openhab.binding.ecovacs.internal.api.util.XPathParser;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -49,9 +50,10 @@ public class GetTotalStatsCommand extends IotDeviceCommand<GetTotalStatsCommand.
             return ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson, TotalStats.class);
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            String area = getFirstXPathMatch(payload, "//@a").getNodeValue();
-            String time = getFirstXPathMatch(payload, "//@l").getNodeValue();
-            String count = getFirstXPathMatch(payload, "//@c").getNodeValue();
+            XPathParser parser = new XPathParser(payload);
+            String area = parser.getFirstXPathMatch("//@a").getNodeValue();
+            String time = parser.getFirstXPathMatch("//@l").getNodeValue();
+            String count = parser.getFirstXPathMatch("//@c").getNodeValue();
             return new TotalStats(Integer.valueOf(area), Integer.valueOf(time), Integer.valueOf(count));
         }
     }

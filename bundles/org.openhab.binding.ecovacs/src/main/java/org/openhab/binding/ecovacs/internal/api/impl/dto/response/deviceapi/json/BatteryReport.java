@@ -10,16 +10,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi;
-
-import java.util.List;
+package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json;
 
 import com.google.gson.annotations.SerializedName;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class ErrorReport {
-    @SerializedName("code")
-    public List<Integer> errorCodes;
+public class BatteryReport {
+    @SerializedName("value")
+    public int percent;
+    @SerializedName("isLow")
+    public int batteryIsLow;
 }

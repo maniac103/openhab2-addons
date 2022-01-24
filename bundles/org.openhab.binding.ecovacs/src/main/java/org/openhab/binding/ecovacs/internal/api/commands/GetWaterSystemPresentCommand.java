@@ -13,7 +13,8 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.WaterInfoReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.WaterInfoReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.WaterSystemInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
@@ -36,7 +37,7 @@ public class GetWaterSystemPresentCommand extends IotDeviceCommand<Boolean> {
             return resp.waterPlatePresent != 0;
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            return Integer.valueOf(getFirstXPathMatch(payload, "//@on").getNodeValue()) != 0;
+            return WaterSystemInfo.parseWaterBoxInfo(payload);
         }
     }
 }

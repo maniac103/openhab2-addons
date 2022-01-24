@@ -13,7 +13,8 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.SpeedReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.SpeedReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.CleaningInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
@@ -37,12 +38,7 @@ public class GetSuctionPowerCommand extends IotDeviceCommand<SuctionPower> {
             return SuctionPower.fromJsonValue(resp.speedLevel);
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            String levelString = getFirstXPathMatch(payload, "//@speed").getNodeValue(); // TODO: verify this
-            SuctionPower level = gson.fromJson(levelString, SuctionPower.class);
-            if (level == null) {
-                throw new IllegalArgumentException("Could not parse power level " + levelString);
-            }
-            return level;
+            return CleaningInfo.parseCleanSpeedInfo(payload, gson);
         }
     }
 }

@@ -13,11 +13,11 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.BatteryReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.BatteryReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.DeviceInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
-import org.w3c.dom.Node;
 
 import com.google.gson.Gson;
 
@@ -38,8 +38,7 @@ public class GetBatteryInfoCommand extends IotDeviceCommand<Integer> {
             return resp.percent;
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            Node batteryAttr = getFirstXPathMatch(payload, "//battery/@power");
-            return Integer.valueOf(batteryAttr.getNodeValue());
+            return DeviceInfo.parseBatteryInfo(payload);
         }
     }
 }

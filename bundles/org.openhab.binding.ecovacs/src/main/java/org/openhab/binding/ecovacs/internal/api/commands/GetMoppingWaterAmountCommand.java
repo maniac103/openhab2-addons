@@ -13,7 +13,8 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.WaterInfoReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.WaterInfoReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.WaterSystemInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
@@ -27,7 +28,7 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class GetMoppingWaterAmountCommand extends IotDeviceCommand<MoppingWaterAmount> {
     public GetMoppingWaterAmountCommand() {
-        super("GetWaterLevel", "getWaterInfo");
+        super("GetWaterPermeability", "getWaterInfo");
     }
 
     public MoppingWaterAmount convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
@@ -37,7 +38,7 @@ public class GetMoppingWaterAmountCommand extends IotDeviceCommand<MoppingWaterA
             return MoppingWaterAmount.fromApiValue(resp.waterAmount);
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            return MoppingWaterAmount.fromApiValue(Integer.valueOf(getFirstXPathMatch(payload, "//@v").getNodeValue()));
+            return WaterSystemInfo.parseWaterPermeabilityInfo(payload);
         }
     }
 }

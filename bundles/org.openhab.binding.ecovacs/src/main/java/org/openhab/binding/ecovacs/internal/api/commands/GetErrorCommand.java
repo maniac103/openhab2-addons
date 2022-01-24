@@ -15,7 +15,8 @@ package org.openhab.binding.ecovacs.internal.api.commands;
 import java.util.Optional;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.ErrorReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ErrorReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.DeviceInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
@@ -41,7 +42,7 @@ public class GetErrorCommand extends IotDeviceCommand<Optional<Integer>> {
             return Optional.of(resp.errorCodes.get(0));
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            return Optional.of(Integer.valueOf(getFirstXPathMatch(payload, "//@errs").getNodeValue()));
+            return DeviceInfo.parseErrorInfo(payload);
         }
     }
 }

@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi;
+package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json;
 
 import java.util.List;
 
@@ -19,21 +19,17 @@ import com.google.gson.annotations.SerializedName;
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class CachedMapInfoReport {
-    @SerializedName("enable")
-    public int enable;
+public class MapSetReport {
+    public String type;
+    public int count;
+    @SerializedName("mid")
+    public String mapId;
+    @SerializedName("msid")
+    public String mapSetId;
+    public List<MapSubSetInfo> subsets;
 
-    @SerializedName("info")
-    public List<CachedMapInfo> mapInfos;
-
-    public static class CachedMapInfo {
-        @SerializedName("mid")
-        public String mapId;
-        public int index;
-        public int status;
-        @SerializedName("using")
-        public int used;
-        public int built;
-        public String name;
+    public static class MapSubSetInfo {
+        @SerializedName("mssid")
+        public String id;
     }
 }

@@ -10,16 +10,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi;
+package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json;
 
 import com.google.gson.annotations.SerializedName;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
-public class WaterInfoReport {
-    @SerializedName("enable")
-    public int waterPlatePresent;
-    @SerializedName("amount")
-    public int waterAmount;
+public class ChargeReport {
+    @SerializedName("isCharging")
+    public int isCharging;
+    @SerializedName("mode")
+    public String mode; // slot, ...?
 }
