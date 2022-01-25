@@ -13,13 +13,12 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.MapSetReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
@@ -30,6 +29,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * @author Danny Baumann - Initial contribution
@@ -39,8 +40,12 @@ public class GetMapSpotAreasWithMapIdCommand extends IotDeviceCommand<List<Strin
     private final String mapId;
 
     public GetMapSpotAreasWithMapIdCommand(String mapId) {
-        super("GetMapSet", "getMapSet");
         this.mapId = mapId;
+    }
+
+    @Override
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetMapSet" : "getMapSet";
     }
 
     @Override
@@ -49,15 +54,16 @@ public class GetMapSpotAreasWithMapIdCommand extends IotDeviceCommand<List<Strin
     }
 
     @Override
-    protected @Nullable Object getJsonPayloadArgs() {
-        Map<String, String> args = new HashMap<>();
-        args.put("mid", mapId);
-        args.put("type", "ar");
+    protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
+        JsonObject args = new JsonObject();
+        args.addProperty("mid", mapId);
+        args.addProperty("type", "ar");
         return args;
     }
 
     @Override
-    public List<String> convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public List<String> convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             MapSetReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
                     MapSetReport.class);

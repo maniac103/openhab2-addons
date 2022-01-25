@@ -12,13 +12,14 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * @author Danny Baumann - Initial contribution
@@ -26,7 +27,12 @@ import org.w3c.dom.Element;
 @NonNullByDefault
 public class GoChargingCommand extends AbstractNoResponseCommand {
     public GoChargingCommand() {
-        super("Charge", "charge");
+        super();
+    }
+
+    @Override
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "Charge" : "charge";
     }
 
     @Override
@@ -37,9 +43,9 @@ public class GoChargingCommand extends AbstractNoResponseCommand {
     }
 
     @Override
-    protected @Nullable Object getJsonPayloadArgs() {
-        Map<String, String> args = new HashMap<>();
-        args.put("act", "go");
+    protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
+        JsonObject args = new JsonObject();
+        args.addProperty("act", "go");
         return args;
     }
 }

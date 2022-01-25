@@ -12,13 +12,14 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * @author Danny Baumann - Initial contribution
@@ -67,8 +68,13 @@ public class PlaySoundCommand extends AbstractNoResponseCommand {
     private final int soundId;
 
     public PlaySoundCommand(SoundType type) {
-        super("PlaySound", "playSound");
+        super();
         this.soundId = type.id;
+    }
+
+    @Override
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "PlaySound" : "playSound";
     }
 
     @Override
@@ -77,9 +83,9 @@ public class PlaySoundCommand extends AbstractNoResponseCommand {
     }
 
     @Override
-    protected @Nullable Object getJsonPayloadArgs() {
-        Map<String, String> args = new HashMap<>();
-        args.put("sid", String.valueOf(soundId));
+    protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
+        JsonObject args = new JsonObject();
+        args.addProperty("sid", String.valueOf(soundId));
         return args;
     }
 }

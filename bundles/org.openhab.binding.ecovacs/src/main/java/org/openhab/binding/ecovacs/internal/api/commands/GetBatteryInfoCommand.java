@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.BatteryReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.DeviceInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
@@ -27,11 +28,17 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class GetBatteryInfoCommand extends IotDeviceCommand<Integer> {
     public GetBatteryInfoCommand() {
-        super("GetBatteryInfo", "getBattery");
+        super();
     }
 
     @Override
-    public Integer convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetBatteryInfo" : "getBattery";
+    }
+
+    @Override
+    public Integer convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             BatteryReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
                     BatteryReport.class);

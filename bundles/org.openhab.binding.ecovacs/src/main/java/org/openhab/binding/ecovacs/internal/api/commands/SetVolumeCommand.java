@@ -12,13 +12,12 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * @author Danny Baumann - Initial contribution
@@ -28,7 +27,6 @@ public class SetVolumeCommand extends AbstractNoResponseCommand {
     private final int volume;
 
     public SetVolumeCommand(int volume) {
-        super("", "setVolume");
         if (volume < 0 || volume > 10) {
             throw new IllegalArgumentException("Volume must be between 0 and 10");
         }
@@ -36,14 +34,17 @@ public class SetVolumeCommand extends AbstractNoResponseCommand {
     }
 
     @Override
-    protected @Nullable Object getJsonPayloadArgs() {
-        Map<String, Object> args = new HashMap<>();
-        args.put("volume", volume);
-        return args;
+    public String getName(ProtocolVersion version) {
+        if (version == ProtocolVersion.XML) {
+            throw new IllegalStateException("Set volume is not supported for XML");
+        }
+        return "setVolume";
     }
 
     @Override
-    protected void applyXmlPayload(Document doc, Element ctl) {
-        throw new IllegalStateException("Command only supported for JSON API");
+    protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
+        JsonObject args = new JsonObject();
+        args.addProperty("volume", volume);
+        return args;
     }
 }

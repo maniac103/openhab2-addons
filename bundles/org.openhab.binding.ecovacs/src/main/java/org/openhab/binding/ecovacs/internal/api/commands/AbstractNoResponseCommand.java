@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 
 import com.google.gson.Gson;
@@ -21,7 +22,7 @@ import com.google.gson.Gson;
  * @author Danny Baumann - Initial contribution
  */
 @NonNullByDefault
-public class AbstractNoResponseCommand extends IotDeviceCommand<AbstractNoResponseCommand.Nothing> {
+public abstract class AbstractNoResponseCommand extends IotDeviceCommand<AbstractNoResponseCommand.Nothing> {
     public static class Nothing {
         private Nothing() {
         }
@@ -29,12 +30,13 @@ public class AbstractNoResponseCommand extends IotDeviceCommand<AbstractNoRespon
         private static Nothing INSTANCE = new Nothing();
     }
 
-    protected AbstractNoResponseCommand(String xmlCommandName, String jsonCommandName) {
-        super(xmlCommandName, jsonCommandName);
+    protected AbstractNoResponseCommand() {
+        super();
     }
 
     @Override
-    public Nothing convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public Nothing convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         return Nothing.INSTANCE;
     }
 }

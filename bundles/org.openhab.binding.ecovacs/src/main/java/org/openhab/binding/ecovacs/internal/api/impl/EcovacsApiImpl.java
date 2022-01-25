@@ -240,16 +240,16 @@ public final class EcovacsApiImpl implements EcovacsApi {
 
     public <T> T sendIotCommand(Device device, DeviceDescription desc, IotDeviceCommand<T> command)
             throws EcovacsApiException {
-        String commandName = command.getName(!desc.usesJsonApi);
+        String commandName = command.getName(desc.protoVersion);
         final Object payload;
         try {
-            if (desc.usesJsonApi) {
-                payload = command.getJsonPayload(gson);
-                logger.trace("{}: Sending IOT command {} with payload {}", device.getName(), commandName,
-                        gson.toJson(payload));
-            } else {
+            if (desc.protoVersion == ProtocolVersion.XML) {
                 payload = command.getXmlPayload();
                 logger.trace("{}: Sending IOT command {} with payload {}", device.getName(), commandName, payload);
+            } else {
+                payload = command.getJsonPayload(desc.protoVersion, gson);
+                logger.trace("{}: Sending IOT command {} with payload {}", device.getName(), commandName,
+                        gson.toJson(payload));
             }
         } catch (Exception e) {
             logger.debug("Could not convert payload for {}", command, e);
@@ -257,7 +257,8 @@ public final class EcovacsApiImpl implements EcovacsApi {
         }
 
         PortalIotCommandRequest data = new PortalIotCommandRequest(createAuthData(), commandName, payload,
-                device.getDid(), device.getResource(), device.getDeviceClass(), desc.usesJsonApi);
+                device.getDid(), device.getResource(), device.getDeviceClass(),
+                desc.protoVersion != ProtocolVersion.XML);
         String json = gson.toJson(data);
         String url = EcovacsApiUrlFactory.getPortalIotDeviceManagerUrl(configuration);
         Request request = httpClient.newRequest(url).method(HttpMethod.POST)
@@ -265,21 +266,21 @@ public final class EcovacsApiImpl implements EcovacsApi {
         ContentResponse response = executeRequest(request);
 
         final AbstractPortalIotCommandResponse commandResponse;
-        if (desc.usesJsonApi) {
-            commandResponse = handleResponse(response, PortalIotCommandJsonResponse.class);
-            logger.trace("{}: Got response payload {}", device.getName(),
-                    ((PortalIotCommandJsonResponse) commandResponse).response);
-        } else {
+        if (desc.protoVersion == ProtocolVersion.XML) {
             commandResponse = handleResponse(response, PortalIotCommandXmlResponse.class);
             logger.trace("{}: Got response payload {}", device.getName(),
                     ((PortalIotCommandXmlResponse) commandResponse).getResponsePayloadXml());
+        } else {
+            commandResponse = handleResponse(response, PortalIotCommandJsonResponse.class);
+            logger.trace("{}: Got response payload {}", device.getName(),
+                    ((PortalIotCommandJsonResponse) commandResponse).response);
         }
         if (!commandResponse.wasSuccessful()) {
             throw new EcovacsApiException(
                     "Sending IOT command " + commandName + " failed: " + commandResponse.getFailureMessage());
         }
         try {
-            return command.convertResponse(commandResponse, gson);
+            return command.convertResponse(commandResponse, desc.protoVersion, gson);
         } catch (Exception e) {
             logger.debug("Converting response for command {} failed", command, e);
             throw new EcovacsApiException(e);

@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.CachedMapInfoReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
@@ -27,11 +28,17 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class GetActiveMapIdCommand extends IotDeviceCommand<String> {
     public GetActiveMapIdCommand() {
-        super("GetMapM", "getCachedMapInfo");
+        super();
     }
 
     @Override
-    public String convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetMapM" : "getCachedMapInfo";
+    }
+
+    @Override
+    public String convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             CachedMapInfoReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
                     CachedMapInfoReport.class);

@@ -121,7 +121,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
         }
 
         // XML message handler does not receive firmware version information with events, so fetch in advance
-        if (!desc.usesJsonApi) {
+        if (desc.protoVersion == ProtocolVersion.XML) {
             listener.onFirmwareVersionChanged(this, sendCommand(new GetFirmwareVersionCommand()));
         }
 
@@ -146,8 +146,9 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
             }
 
             logger.debug("Established MQTT connection to device {}", getSerialNumber());
-            final MessageHandler messageHandler = desc.usesJsonApi ? new JsonMessageHandler(listener)
-                    : new XmlMessageHandler(listener);
+            final MessageHandler messageHandler = desc.protoVersion == ProtocolVersion.XML
+                    ? new XmlMessageHandler(listener)
+                    : new JsonMessageHandler(listener, desc.protoVersion);
             String topic = String.format("iot/atr/+/%s/%s/%s/+", device.getDid(), device.getDeviceClass(),
                     device.getResource());
             client.subscribeWith().topicFilter(topic).callback(publish -> {
@@ -264,7 +265,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
         private final EventListener listener;
         private String lastFirmwareVersion = "";
 
-        JsonMessageHandler(EventListener listener) {
+        JsonMessageHandler(EventListener listener, ProtocolVersion version) {
             this.listener = listener;
         }
 

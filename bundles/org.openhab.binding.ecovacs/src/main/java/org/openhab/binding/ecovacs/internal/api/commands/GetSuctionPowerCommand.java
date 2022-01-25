@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.SpeedReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.CleaningInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
@@ -28,11 +29,17 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class GetSuctionPowerCommand extends IotDeviceCommand<SuctionPower> {
     public GetSuctionPowerCommand() {
-        super("GetCleanSpeed", "getSpeed");
+        super();
     }
 
     @Override
-    public SuctionPower convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetCleanSpeed" : "getSpeed";
+    }
+
+    @Override
+    public SuctionPower convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             SpeedReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson, SpeedReport.class);
             return SuctionPower.fromJsonValue(resp.speedLevel);

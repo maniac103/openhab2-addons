@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.WaterInfoReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.WaterSystemInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
@@ -28,10 +29,16 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class GetMoppingWaterAmountCommand extends IotDeviceCommand<MoppingWaterAmount> {
     public GetMoppingWaterAmountCommand() {
-        super("GetWaterPermeability", "getWaterInfo");
+        super();
     }
 
-    public MoppingWaterAmount convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    @Override
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetWaterPermeability" : "getWaterInfo";
+    }
+
+    public MoppingWaterAmount convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version,
+            Gson gson) throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             WaterInfoReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
                     WaterInfoReport.class);

@@ -26,22 +26,22 @@ public class DeviceDescription {
     public final String modelName;
     public final String deviceClass;
     public final @Nullable String deviceClassLink;
-    public final boolean usesJsonApi;
+    public final ProtocolVersion protoVersion;
     public final boolean usesMqtt;
     public final Set<DeviceCapability> capabilities;
 
     public DeviceDescription(String modelName, String deviceClass, @Nullable String deviceClassLink,
-            boolean usesJsonApi, boolean usesMqtt, Set<DeviceCapability> capabilities) {
+            ProtocolVersion protoVersion, boolean usesMqtt, Set<DeviceCapability> capabilities) {
         this.modelName = modelName;
         this.capabilities = capabilities;
         this.deviceClass = deviceClass;
         this.deviceClassLink = deviceClassLink;
-        this.usesJsonApi = usesJsonApi;
+        this.protoVersion = protoVersion;
         this.usesMqtt = usesMqtt;
     }
 
     public DeviceDescription resolveLinkWith(DeviceDescription other) {
-        return new DeviceDescription(modelName, deviceClass, null, other.usesJsonApi, other.usesMqtt,
+        return new DeviceDescription(modelName, deviceClass, null, other.protoVersion, other.usesMqtt,
                 other.capabilities);
     }
 }

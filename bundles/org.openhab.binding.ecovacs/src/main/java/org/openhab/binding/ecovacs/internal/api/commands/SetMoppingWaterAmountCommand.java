@@ -12,14 +12,15 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * @author Danny Baumann - Initial contribution
@@ -29,8 +30,13 @@ public class SetMoppingWaterAmountCommand extends AbstractNoResponseCommand {
     private final int level;
 
     public SetMoppingWaterAmountCommand(MoppingWaterAmount amount) {
-        super("SetWaterPermeability", "setWaterInfo");
+        super();
         this.level = amount.toApiValue();
+    }
+
+    @Override
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "SetWaterPermeability" : "setWaterInfo";
     }
 
     @Override
@@ -39,9 +45,9 @@ public class SetMoppingWaterAmountCommand extends AbstractNoResponseCommand {
     }
 
     @Override
-    protected @Nullable Object getJsonPayloadArgs() {
-        Map<String, Object> args = new HashMap<>();
-        args.put("amount", level);
+    protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
+        JsonObject args = new JsonObject();
+        args.addProperty("amount", level);
         return args;
     }
 }

@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.NetworkInfoReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
@@ -29,11 +30,17 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class GetNetworkInfoCommand extends IotDeviceCommand<NetworkInfo> {
     public GetNetworkInfoCommand() {
-        super("GetNetInfo", "getNetInfo");
+        super();
     }
 
     @Override
-    public NetworkInfo convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetNetInfo" : "getNetInfo";
+    }
+
+    @Override
+    public NetworkInfo convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             NetworkInfoReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
                     NetworkInfoReport.class);

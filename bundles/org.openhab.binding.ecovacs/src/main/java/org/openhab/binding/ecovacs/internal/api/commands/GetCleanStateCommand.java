@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.CleanReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.CleaningInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
@@ -28,11 +29,17 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class GetCleanStateCommand extends IotDeviceCommand<CleanMode> {
     public GetCleanStateCommand() {
-        super("GetCleanState", "getCleanInfo");
+        super();
     }
 
     @Override
-    public CleanMode convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetCleanState" : "getCleanInfo";
+    }
+
+    @Override
+    public CleanMode convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             CleanReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson, CleanReport.class);
             return resp.determineCleanMode(gson);

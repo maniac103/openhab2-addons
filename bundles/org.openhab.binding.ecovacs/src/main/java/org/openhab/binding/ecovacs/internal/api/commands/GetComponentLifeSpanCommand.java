@@ -13,11 +13,11 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ComponentLifeSpanReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.DeviceInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
@@ -28,6 +28,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
@@ -39,8 +40,12 @@ public class GetComponentLifeSpanCommand extends IotDeviceCommand<Integer> {
     private final Component type;
 
     public GetComponentLifeSpanCommand(Component type) {
-        super("GetLifeSpan", "getLifeSpan");
         this.type = type;
+    }
+
+    @Override
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetLifeSpan" : "getLifeSpan";
     }
 
     @Override
@@ -49,14 +54,15 @@ public class GetComponentLifeSpanCommand extends IotDeviceCommand<Integer> {
     }
 
     @Override
-    protected @Nullable Object getJsonPayloadArgs() {
-        List<String> args = new ArrayList<>();
+    protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
+        JsonArray args = new JsonArray(1);
         args.add(type.jsonValue);
         return args;
     }
 
     @Override
-    public Integer convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public Integer convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             JsonElement respPayloadRaw = ((PortalIotCommandJsonResponse) response).getResponsePayload(gson);
             Type type = new TypeToken<List<ComponentLifeSpanReport>>() {

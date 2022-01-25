@@ -12,14 +12,16 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * @author Danny Baumann - Initial contribution
@@ -31,10 +33,15 @@ abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
     private final Optional<String> mode;
 
     protected AbstractCleaningCommand(String xmlAction, String jsonAction, @Nullable String mode) {
-        super("Clean", "clean");
+        super();
         this.xmlAction = xmlAction;
         this.jsonAction = jsonAction;
         this.mode = Optional.ofNullable(mode);
+    }
+
+    @Override
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "Clean" : "clean";
     }
 
     @Override
@@ -47,10 +54,10 @@ abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
     }
 
     @Override
-    protected @Nullable Object getJsonPayloadArgs() {
-        Map<String, String> args = new HashMap<>();
-        args.put("act", jsonAction);
-        mode.ifPresent(m -> args.put("type", m));
+    protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
+        JsonObject args = new JsonObject();
+        args.addProperty("act", jsonAction);
+        mode.ifPresent(m -> args.addProperty("type", m));
         return args;
     }
 }

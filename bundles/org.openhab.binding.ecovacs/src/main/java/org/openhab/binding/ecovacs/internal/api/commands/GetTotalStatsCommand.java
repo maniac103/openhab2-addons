@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
@@ -42,10 +43,16 @@ public class GetTotalStatsCommand extends IotDeviceCommand<GetTotalStatsCommand.
     }
 
     public GetTotalStatsCommand() {
-        super("GetCleanSum", "getTotalStats");
+        super();
     }
 
-    public TotalStats convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    @Override
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetCleanSum" : "getTotalStats";
+    }
+
+    public TotalStats convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             return ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson, TotalStats.class);
         } else {

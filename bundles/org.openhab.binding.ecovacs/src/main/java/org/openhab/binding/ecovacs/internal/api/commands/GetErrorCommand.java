@@ -15,6 +15,7 @@ package org.openhab.binding.ecovacs.internal.api.commands;
 import java.util.Optional;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ErrorReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.DeviceInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
@@ -29,11 +30,17 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class GetErrorCommand extends IotDeviceCommand<Optional<Integer>> {
     public GetErrorCommand() {
-        super("GetError", "getError");
+        super();
     }
 
     @Override
-    public Optional<Integer> convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetError" : "getError";
+    }
+
+    @Override
+    public Optional<Integer> convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version,
+            Gson gson) throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             ErrorReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson, ErrorReport.class);
             if (resp.errorCodes.isEmpty()) {

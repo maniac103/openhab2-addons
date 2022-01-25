@@ -13,10 +13,9 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -27,16 +26,20 @@ import com.google.gson.annotations.SerializedName;
 @NonNullByDefault
 public class GetVolumeCommand extends IotDeviceCommand<Integer> {
     public GetVolumeCommand() {
-        super("", "getVolume");
+        super();
     }
 
     @Override
-    protected void applyXmlPayload(Document doc, Element ctl) {
-        throw new IllegalStateException("Command only supported for JSON API");
+    public String getName(ProtocolVersion version) {
+        if (version == ProtocolVersion.XML) {
+            throw new IllegalStateException("Get volume command is not supported for XML");
+        }
+        return "getVolume";
     }
 
     @Override
-    public Integer convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public Integer convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             JsonResponse resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
                     JsonResponse.class);

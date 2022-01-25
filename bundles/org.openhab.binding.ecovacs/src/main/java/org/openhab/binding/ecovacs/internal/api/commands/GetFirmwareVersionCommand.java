@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
 import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
@@ -27,7 +28,15 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class GetFirmwareVersionCommand extends IotDeviceCommand<String> {
     public GetFirmwareVersionCommand() {
-        super("GetVersion", "");
+        super();
+    }
+
+    @Override
+    public String getName(ProtocolVersion version) {
+        if (version != ProtocolVersion.XML) {
+            throw new IllegalStateException("Get FW version is only supported for XML");
+        }
+        return "GetVersion";
     }
 
     @Override
@@ -36,7 +45,8 @@ public class GetFirmwareVersionCommand extends IotDeviceCommand<String> {
     }
 
     @Override
-    public String convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public String convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
         return XPathUtils.getFirstXPathMatch(payload, "//ver[@name='FW']").getTextContent();
     }

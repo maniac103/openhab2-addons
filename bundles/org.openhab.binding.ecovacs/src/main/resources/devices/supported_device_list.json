@@ -2,7 +2,7 @@
     {
         "modelName": "DEEBOT OZMO Slim10 Series",
         "deviceClass": "02uwxm",
-        "usesJsonApi": false,
+        "protoVersion": "xml",
         "usesMqtt": true,
         "capabilities": [
             "mopping_system",
@@ -13,7 +13,7 @@
     {
         "modelName": "DEEBOT OZMO 950 Series",
         "deviceClass": "yna5xi",
-        "usesJsonApi": true,
+        "protoVersion": "json",
         "usesMqtt": true,
         "capabilities": [
             "mopping_system",
@@ -40,7 +40,7 @@
     {
         "modelName": "DEEBOT OZMO T8",
         "deviceClass": "h18jkh",
-        "usesJsonApi": true,
+        "protoVersion": "json",
         "usesMqtt": true,
         "capabilities": [
             "mopping_system",
@@ -157,7 +157,7 @@
     {
         "modelName": "DEEBOT OZMO T8+",
         "deviceClass": "fqxoiu",
-        "usesJsonApi": true,
+        "protoVersion": "json",
         "usesMqtt": true,
         "capabilities": [
             "mopping_system",
@@ -250,7 +250,7 @@
     {
         "modelName": "DEEBOT U2",
         "deviceClass": "ipzjy0",
-        "usesJsonApi": true,
+        "protoVersion": "json",
         "usesMqtt": true,
         "capabilities": [
             "mopping_system",

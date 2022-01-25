@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ChargeReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.DeviceInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
@@ -28,11 +29,17 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class GetChargeStateCommand extends IotDeviceCommand<ChargeMode> {
     public GetChargeStateCommand() {
-        super("GetChargeState", "getChargeState");
+        super();
     }
 
     @Override
-    public ChargeMode convertResponse(AbstractPortalIotCommandResponse response, Gson gson) throws Exception {
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "GetChargeState" : "getChargeState";
+    }
+
+    @Override
+    public ChargeMode convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
+            throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
             ChargeReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
                     ChargeReport.class);

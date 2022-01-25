@@ -12,14 +12,15 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * @author Danny Baumann - Initial contribution
@@ -29,14 +30,18 @@ public class SetSuctionPowerCommand extends AbstractNoResponseCommand {
     private final SuctionPower power;
 
     public SetSuctionPowerCommand(SuctionPower power) {
-        super("SetCleanSpeed", "setSpeed");
         this.power = power;
     }
 
     @Override
-    protected @Nullable Object getJsonPayloadArgs() {
-        Map<String, Object> args = new HashMap<>();
-        args.put("speed", power.toJsonValue());
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "SetCleanSpeed" : "setSpeed";
+    }
+
+    @Override
+    protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
+        JsonObject args = new JsonObject();
+        args.addProperty("speed", power.toJsonValue());
         return args;
     }
 

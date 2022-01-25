@@ -12,13 +12,14 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * @author Danny Baumann - Initial contribution
@@ -29,9 +30,13 @@ public class SpotAreaCleaningCommand extends AbstractNoResponseCommand {
     private final int cleanPasses;
 
     public SpotAreaCleaningCommand(String roomIds, int cleanPasses) {
-        super("Clean", "clean");
         this.content = roomIds;
         this.cleanPasses = cleanPasses;
+    }
+
+    @Override
+    public String getName(ProtocolVersion version) {
+        return version == ProtocolVersion.XML ? "Clean" : "clean";
     }
 
     @Override
@@ -46,12 +51,12 @@ public class SpotAreaCleaningCommand extends AbstractNoResponseCommand {
     }
 
     @Override
-    protected @Nullable Object getJsonPayloadArgs() {
-        Map<String, Object> args = new HashMap<>();
-        args.put("act", "start");
-        args.put("content", content);
-        args.put("count", cleanPasses);
-        args.put("type", "spotArea");
+    protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
+        JsonObject args = new JsonObject();
+        args.addProperty("act", "start");
+        args.addProperty("content", content);
+        args.addProperty("count", cleanPasses);
+        args.addProperty("type", "spotArea");
         return args;
     }
 }
