@@ -13,13 +13,14 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
 @NonNullByDefault
 public class PauseCleaningCommand extends AbstractCleaningCommand {
-    public PauseCleaningCommand() {
-        super("p", "pause", null);
+    public PauseCleaningCommand(CleanMode mode) {
+        super("p", "pause", mode);
     }
 }

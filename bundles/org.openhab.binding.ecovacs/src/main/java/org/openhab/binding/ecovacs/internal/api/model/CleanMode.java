@@ -29,9 +29,9 @@ public enum CleanMode {
     SPOT,
     @SerializedName(value = "SpotArea", alternate = { "spotArea" })
     SPOT_AREA,
-    @SerializedName("customArea")
+    @SerializedName(value = "CustomArea", alternate = { "customArea" })
     CUSTOM_AREA,
-    @SerializedName("singleroom")
+    @SerializedName("singleRoom")
     SINGLE_ROOM,
     @SerializedName("pause")
     PAUSE,

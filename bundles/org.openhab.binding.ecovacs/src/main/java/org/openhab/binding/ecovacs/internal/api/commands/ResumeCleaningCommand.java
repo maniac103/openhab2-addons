@@ -13,13 +13,14 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
 @NonNullByDefault
 public class ResumeCleaningCommand extends AbstractCleaningCommand {
-    public ResumeCleaningCommand() {
-        super("r", "resume", null);
+    public ResumeCleaningCommand(CleanMode mode) {
+        super("r", "resume", mode);
     }
 }

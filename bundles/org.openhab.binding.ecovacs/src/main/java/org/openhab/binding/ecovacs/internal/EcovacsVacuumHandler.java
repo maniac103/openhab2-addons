@@ -505,13 +505,20 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     }
 
     private @Nullable AbstractNoResponseCommand determineDeviceCommand(EcovacsDevice device, String command) {
+        CleanMode mode = lastCleanMode;
         switch (command) {
             case CMD_AUTO_CLEAN:
                 return new StartAutoCleaningCommand();
             case CMD_PAUSE:
-                return new PauseCleaningCommand();
+                if (mode != null) {
+                    return new PauseCleaningCommand(mode);
+                }
+                break;
             case CMD_RESUME:
-                return new ResumeCleaningCommand();
+                if (mode != null) {
+                    return new ResumeCleaningCommand(mode);
+                }
+                break;
             case CMD_STOP:
                 return new StopCleaningCommand();
             case CMD_CHARGE:

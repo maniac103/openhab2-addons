@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
+import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -30,9 +31,9 @@ import com.google.gson.JsonObject;
 abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
     private final String xmlAction;
     private final String jsonAction;
-    private final Optional<String> mode;
+    private final Optional<CleanMode> mode;
 
-    protected AbstractCleaningCommand(String xmlAction, String jsonAction, @Nullable String mode) {
+    protected AbstractCleaningCommand(String xmlAction, String jsonAction, @Nullable CleanMode mode) {
         super();
         this.xmlAction = xmlAction;
         this.jsonAction = jsonAction;
@@ -55,7 +56,7 @@ abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
     @Override
     protected void applyXmlPayload(Document doc, Element ctl) {
         Element clean = doc.createElement("clean");
-        mode.ifPresent(m -> clean.setAttribute("type", m));
+        getCleanModeProperty(ProtocolVersion.XML).ifPresent(m -> clean.setAttribute("type", m));
         clean.setAttribute("speed", "standard");
         clean.setAttribute("act", xmlAction);
         ctl.appendChild(clean);
@@ -65,7 +66,7 @@ abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
     protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
         JsonObject args = new JsonObject();
         args.addProperty("act", jsonAction);
-        mode.ifPresent(m -> {
+        getCleanModeProperty(version).ifPresent(m -> {
             JsonObject payload = args;
             if (version == ProtocolVersion.JSON_V2) {
                 JsonObject content = new JsonObject();
@@ -75,5 +76,28 @@ abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
             payload.addProperty("type", m);
         });
         return args;
+    }
+
+    private Optional<String> getCleanModeProperty(ProtocolVersion version) {
+        return mode.flatMap(m -> {
+            switch (m) {
+                case AUTO:
+                    return Optional.of("auto");
+                case CUSTOM_AREA:
+                    return Optional.of(version == ProtocolVersion.XML ? "CustomArea" : "customArea");
+                case EDGE:
+                    return Optional.of("border");
+                case SPOT:
+                    return Optional.of("spot");
+                case SPOT_AREA:
+                    return Optional.of(version == ProtocolVersion.XML ? "SpotArea" : "spotArea");
+                case SINGLE_ROOM:
+                    return Optional.of("singleRoom");
+                case STOP:
+                    return Optional.of("stop");
+                default:
+                    return Optional.empty();
+            }
+        });
     }
 }
