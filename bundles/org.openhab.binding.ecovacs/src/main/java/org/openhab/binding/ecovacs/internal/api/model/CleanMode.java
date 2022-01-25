@@ -40,5 +40,10 @@ public enum CleanMode {
     @SerializedName(value = "going", alternate = { "goCharging" })
     RETURNING,
     @SerializedName("idle")
-    IDLE
+    IDLE;
+
+    public boolean isActive() {
+        return this == AUTO || this == EDGE || this == SPOT || this == SPOT_AREA || this == CUSTOM_AREA
+                || this == SINGLE_ROOM;
+    }
 }

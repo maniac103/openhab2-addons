@@ -102,6 +102,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     private @Nullable Boolean lastWasCharging;
     private @Nullable CleanMode lastCleanMode;
+    private @Nullable CleanMode lastActiveCleanMode;
     private Optional<String> lastCleanMapUrl = Optional.empty();
 
     public EcovacsVacuumHandler(Thing thing, TranslationProvider i18Provider, LocaleProvider localeProvider) {
@@ -239,6 +240,9 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     @Override
     public void onCleaningModeUpdated(EcovacsDevice device, CleanMode newMode) {
         lastCleanMode = newMode;
+        if (newMode.isActive()) {
+            lastActiveCleanMode = newMode;
+        }
         updateStateAndCommandChannels();
         if (newMode == CleanMode.RETURNING) {
             startPolling(30);
@@ -299,7 +303,11 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     private void fetchInitialStateAndCommandValues() throws EcovacsApiException {
         doWithDevice(device -> {
             lastWasCharging = device.sendCommand(new GetChargeStateCommand()) == ChargeMode.CHARGING;
-            lastCleanMode = device.sendCommand(new GetCleanStateCommand());
+            CleanMode mode = device.sendCommand(new GetCleanStateCommand());
+            if (mode.isActive()) {
+                lastActiveCleanMode = mode;
+            }
+            lastCleanMode = mode;
             updateStateAndCommandChannels();
         });
     }
@@ -507,7 +515,8 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     }
 
     private @Nullable AbstractNoResponseCommand determineDeviceCommand(EcovacsDevice device, String command) {
-        CleanMode mode = lastCleanMode;
+        CleanMode mode = lastActiveCleanMode;
+
         switch (command) {
             case CMD_AUTO_CLEAN:
                 return new StartAutoCleaningCommand();
