@@ -282,6 +282,11 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         scheduleReconnection();
     }
 
+    @Override
+    public void onFirmwareVersionChanged(EcovacsDevice device, String fwVersion) {
+        updateProperty(Thing.PROPERTY_FIRMWARE_VERSION, fwVersion);
+    }
+
     private void fetchInitialBatteryStatus() throws EcovacsApiException {
         doWithDevice(device -> {
             Integer batteryPercent = device.sendCommand(new GetBatteryInfoCommand());

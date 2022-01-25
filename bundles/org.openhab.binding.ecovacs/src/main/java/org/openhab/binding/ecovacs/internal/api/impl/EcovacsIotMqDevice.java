@@ -67,7 +67,6 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
 
     private final Device device;
     private final DeviceDescription desc;
-    private final String firmwareVersion;
     private final EcovacsApiImpl api;
     private final Gson gson;
     private @Nullable Mqtt3AsyncClient mqttClient;
@@ -76,7 +75,6 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
             throws EcovacsApiException {
         this.device = device;
         this.desc = desc;
-        this.firmwareVersion = api.sendIotCommand(device, desc, new GetFirmwareVersionCommand());
         this.api = api;
         this.gson = gson;
     }
@@ -102,11 +100,6 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     }
 
     @Override
-    public String getFirmwareVersion() {
-        return firmwareVersion;
-    }
-
-    @Override
     public <T> T sendCommand(IotDeviceCommand<T> command) throws EcovacsApiException {
         return api.sendIotCommand(device, desc, command);
     }
@@ -125,6 +118,11 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
         PortalLoginResponse loginData = api.getLoginData();
         if (loginData == null) {
             throw new EcovacsApiException("Can not connect when not logged in");
+        }
+
+        // XML message handler does not receive firmware version information with events, so fetch in advance
+        if (!desc.usesJsonApi) {
+            listener.onFirmwareVersionChanged(this, sendCommand(new GetFirmwareVersionCommand()));
         }
 
         // TOOD: use realm from config
@@ -264,6 +262,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
 
     private class JsonMessageHandler implements MessageHandler {
         private final EventListener listener;
+        private String lastFirmwareVersion = "";
 
         JsonMessageHandler(EventListener listener) {
             this.listener = listener;
@@ -276,7 +275,10 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
             if (response == null) {
                 return;
             }
-            // TODO: update FW version?
+            if (!lastFirmwareVersion.equals(response.header.firmwareVersion)) {
+                lastFirmwareVersion = response.header.firmwareVersion;
+                listener.onFirmwareVersionChanged(EcovacsIotMqDevice.this, lastFirmwareVersion);
+            }
 
             if (eventName.startsWith("on")) {
                 eventName = eventName.substring(2);

@@ -28,6 +28,8 @@ import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
 @NonNullByDefault
 public interface EcovacsDevice {
     public interface EventListener {
+        void onFirmwareVersionChanged(EcovacsDevice device, String fwVersion);
+
         void onBatteryLevelUpdated(EcovacsDevice device, int newLevelPercent);
 
         void onChargingStateUpdated(EcovacsDevice device, boolean charging);
@@ -50,8 +52,6 @@ public interface EcovacsDevice {
     public String getSerialNumber();
 
     public String getModelName();
-
-    public String getFirmwareVersion();
 
     public boolean hasCapability(DeviceCapability cap);
 

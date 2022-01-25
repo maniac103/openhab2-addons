@@ -49,10 +49,6 @@ public abstract class IotDeviceCommand<RESPONSETYPE> {
         return forXml ? xmlCommandName : jsonCommandName;
     }
 
-    public boolean forceXmlFormat() {
-        return false;
-    }
-
     public final String getXmlPayload() throws Exception {
         Document xmlDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         Element ctl = xmlDoc.createElement("ctl");

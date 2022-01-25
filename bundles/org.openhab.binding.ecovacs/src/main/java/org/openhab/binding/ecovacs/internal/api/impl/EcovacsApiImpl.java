@@ -240,11 +240,10 @@ public final class EcovacsApiImpl implements EcovacsApi {
 
     public <T> T sendIotCommand(Device device, DeviceDescription desc, IotDeviceCommand<T> command)
             throws EcovacsApiException {
-        boolean useJson = desc.usesJsonApi && !command.forceXmlFormat();
-        String commandName = command.getName(!useJson);
+        String commandName = command.getName(!desc.usesJsonApi);
         final Object payload;
         try {
-            if (useJson) {
+            if (desc.usesJsonApi) {
                 payload = command.getJsonPayload(gson);
                 logger.trace("{}: Sending IOT command {} with payload {}", device.getName(), commandName,
                         gson.toJson(payload));
@@ -258,7 +257,7 @@ public final class EcovacsApiImpl implements EcovacsApi {
         }
 
         PortalIotCommandRequest data = new PortalIotCommandRequest(createAuthData(), commandName, payload,
-                device.getDid(), device.getResource(), device.getDeviceClass(), useJson);
+                device.getDid(), device.getResource(), device.getDeviceClass(), desc.usesJsonApi);
         String json = gson.toJson(data);
         String url = EcovacsApiUrlFactory.getPortalIotDeviceManagerUrl(configuration);
         Request request = httpClient.newRequest(url).method(HttpMethod.POST)
@@ -266,7 +265,7 @@ public final class EcovacsApiImpl implements EcovacsApi {
         ContentResponse response = executeRequest(request);
 
         final AbstractPortalIotCommandResponse commandResponse;
-        if (useJson) {
+        if (desc.usesJsonApi) {
             commandResponse = handleResponse(response, PortalIotCommandJsonResponse.class);
             logger.trace("{}: Got response payload {}", device.getName(),
                     ((PortalIotCommandJsonResponse) commandResponse).response);
@@ -276,8 +275,8 @@ public final class EcovacsApiImpl implements EcovacsApi {
                     ((PortalIotCommandXmlResponse) commandResponse).getResponsePayloadXml());
         }
         if (!commandResponse.wasSuccessful()) {
-            throw new EcovacsApiException("Sending IOT command " + command.getName(!useJson) + " failed: "
-                    + commandResponse.getFailureMessage());
+            throw new EcovacsApiException(
+                    "Sending IOT command " + commandName + " failed: " + commandResponse.getFailureMessage());
         }
         try {
             return command.convertResponse(commandResponse, gson);
