@@ -25,7 +25,7 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class CleaningInfo {
     public static CleanMode parseCleanStateInfo(String xml, Gson gson) throws Exception {
-        String stateString = XPathUtils.getFirstXPathMatch(xml, "//clean/@st").getNodeValue();
+        String stateString = XPathUtils.getFirstXPathMatchOpt(xml, "//clean/@st").map(n -> n.getNodeValue()).orElse("");
         final CleanMode mode;
 
         if ("h".equals(stateString)) {
