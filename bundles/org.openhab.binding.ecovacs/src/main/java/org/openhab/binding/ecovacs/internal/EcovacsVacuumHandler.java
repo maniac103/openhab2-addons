@@ -225,7 +225,9 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void onBatteryLevelUpdated(EcovacsDevice device, int newLevelPercent) {
-        updateState(CHANNEL_ID_BATTERY_LEVEL, new DecimalType(newLevelPercent));
+        // Some devices report weird values (> 100%), so better clamp to supported range
+        int actualPercent = Math.max(0, Math.min(newLevelPercent, 100));
+        updateState(CHANNEL_ID_BATTERY_LEVEL, new DecimalType(actualPercent));
     }
 
     @Override
