@@ -15,6 +15,7 @@ package org.openhab.binding.ecovacs.internal.api.commands;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.CleanReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.CleanReportV2;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.CleaningInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
@@ -34,15 +35,30 @@ public class GetCleanStateCommand extends IotDeviceCommand<CleanMode> {
 
     @Override
     public String getName(ProtocolVersion version) {
-        return version == ProtocolVersion.XML ? "GetCleanState" : "getCleanInfo";
+        switch (version) {
+            case XML:
+                return "GetCleanState";
+            case JSON:
+                return "getCleanInfo";
+            case JSON_V2:
+                return "getCleanInfo_V2";
+        }
+        throw new AssertionError();
     }
 
     @Override
     public CleanMode convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
             throws Exception {
         if (response instanceof PortalIotCommandJsonResponse) {
-            CleanReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson, CleanReport.class);
-            return resp.determineCleanMode(gson);
+            if (version == ProtocolVersion.JSON) {
+                CleanReport resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
+                        CleanReport.class);
+                return resp.determineCleanMode(gson);
+            } else {
+                CleanReportV2 resp = ((PortalIotCommandJsonResponse) response).getResponsePayloadAs(gson,
+                        CleanReportV2.class);
+                return resp.determineCleanMode(gson);
+            }
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
             return CleaningInfo.parseCleanStateInfo(payload, gson);

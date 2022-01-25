@@ -33,6 +33,7 @@ import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.BatteryReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ChargeReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.CleanReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.CleanReportV2;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ErrorReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.StatsReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.WaterInfoReport;
@@ -286,9 +287,6 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
             } else if (eventName.startsWith("report")) {
                 eventName = eventName.substring(6);
             }
-            if (eventName.endsWith("_v2")) {
-                eventName = eventName.substring(0, eventName.length() - 3);
-            }
 
             logger.trace("{}: Got MQTT message on topic {}: {}", getSerialNumber(), topic, payload);
 
@@ -305,6 +303,11 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
                 }
                 case "cleaninfo": {
                     CleanReport report = payloadAs(response, CleanReport.class);
+                    listener.onCleaningModeUpdated(EcovacsIotMqDevice.this, report.determineCleanMode(gson));
+                    break;
+                }
+                case "cleaninfo_v2": {
+                    CleanReportV2 report = payloadAs(response, CleanReportV2.class);
                     listener.onCleaningModeUpdated(EcovacsIotMqDevice.this, report.determineCleanMode(gson));
                     break;
                 }

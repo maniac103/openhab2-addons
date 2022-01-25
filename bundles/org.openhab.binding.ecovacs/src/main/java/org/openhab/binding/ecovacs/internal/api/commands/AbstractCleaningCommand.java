@@ -41,7 +41,15 @@ abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
 
     @Override
     public String getName(ProtocolVersion version) {
-        return version == ProtocolVersion.XML ? "Clean" : "clean";
+        switch (version) {
+            case XML:
+                return "Clean";
+            case JSON:
+                return "clean";
+            case JSON_V2:
+                return "clean_V2";
+        }
+        throw new AssertionError();
     }
 
     @Override
@@ -57,7 +65,15 @@ abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
     protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
         JsonObject args = new JsonObject();
         args.addProperty("act", jsonAction);
-        mode.ifPresent(m -> args.addProperty("type", m));
+        mode.ifPresent(m -> {
+            JsonObject payload = args;
+            if (version == ProtocolVersion.JSON_V2) {
+                JsonObject content = new JsonObject();
+                args.add("content", content);
+                payload = content;
+            }
+            payload.addProperty("type", m);
+        });
         return args;
     }
 }

@@ -24,5 +24,7 @@ public enum ProtocolVersion {
     @SerializedName("xml")
     XML,
     @SerializedName("json")
-    JSON
+    JSON,
+    @SerializedName("json_v2")
+    JSON_V2
 }

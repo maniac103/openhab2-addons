@@ -36,7 +36,15 @@ public class SpotAreaCleaningCommand extends AbstractNoResponseCommand {
 
     @Override
     public String getName(ProtocolVersion version) {
-        return version == ProtocolVersion.XML ? "Clean" : "clean";
+        switch (version) {
+            case XML:
+                return "Clean";
+            case JSON:
+                return "clean";
+            case JSON_V2:
+                return "clean_V2";
+        }
+        throw new AssertionError();
     }
 
     @Override
@@ -54,9 +62,20 @@ public class SpotAreaCleaningCommand extends AbstractNoResponseCommand {
     protected @Nullable JsonElement getJsonPayloadArgs(ProtocolVersion version) {
         JsonObject args = new JsonObject();
         args.addProperty("act", "start");
-        args.addProperty("content", content);
-        args.addProperty("count", cleanPasses);
-        args.addProperty("type", "spotArea");
+
+        JsonObject payload = args;
+        if (version == ProtocolVersion.JSON_V2) {
+            JsonObject content = new JsonObject();
+            args.add("content", content);
+            payload = content;
+            payload.addProperty("value", this.content);
+            payload.addProperty("donotClean", 0);
+            payload.addProperty("total", 0);
+        } else {
+            payload.addProperty("content", this.content);
+        }
+        payload.addProperty("count", cleanPasses);
+        payload.addProperty("type", "spotArea");
         return args;
     }
 }
