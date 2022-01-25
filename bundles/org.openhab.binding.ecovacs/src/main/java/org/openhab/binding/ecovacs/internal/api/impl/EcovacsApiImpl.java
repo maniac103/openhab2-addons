@@ -299,6 +299,7 @@ public final class EcovacsApiImpl implements EcovacsApi {
         if (!responseObj.wasSuccessful()) {
             throw new EcovacsApiException("Fetching clean logs failed");
         }
+        logger.trace("{}: Fetching cleaning logs yields {} records", device.getName(), responseObj.records.size());
         return responseObj.records;
     }
 
