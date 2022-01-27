@@ -1,5 +1,19 @@
 [
     {
+        "modelName": "DEEBOT OZMO/PRO 930 Series",
+        "deviceClass": "115",
+        "protoVersion": "xml",
+        "usesMqtt": false,
+        "capabilities": [
+            "mopping_system",
+            "main_brush",
+            "spot_area_cleaning",
+            "custom_area_cleaning",
+            "mapping"
+        ]
+    },
+
+    {
         "modelName": "DEEBOT OZMO Slim10 Series",
         "deviceClass": "02uwxm",
         "protoVersion": "xml",

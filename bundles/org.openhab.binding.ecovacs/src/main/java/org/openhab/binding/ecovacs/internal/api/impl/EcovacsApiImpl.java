@@ -189,7 +189,7 @@ public final class EcovacsApiImpl implements EcovacsApi {
             if (desc.usesMqtt) {
                 devices.add(new EcovacsIotMqDevice(dev, desc, this, gson));
             } else {
-                // TODO: XMPP device
+                devices.add(new EcovacsXmppDevice(dev, desc, this, gson));
             }
         }
         return devices;
