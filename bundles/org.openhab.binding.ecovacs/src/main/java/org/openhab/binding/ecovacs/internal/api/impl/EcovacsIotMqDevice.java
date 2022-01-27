@@ -31,24 +31,10 @@ import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
 import org.openhab.binding.ecovacs.internal.api.commands.GetFirmwareVersionCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.BatteryReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ChargeReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.CleanReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.CleanReportV2;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.ErrorReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.StatsReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.WaterInfoReport;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.CleaningInfo;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.DeviceInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.Device;
-import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse.JsonResponsePayloadWrapper;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalLoginResponse;
-import org.openhab.binding.ecovacs.internal.api.model.ChargeMode;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
-import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
-import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
-import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,15 +134,18 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
             }
 
             logger.debug("Established MQTT connection to device {}", getSerialNumber());
-            final MessageHandler messageHandler = desc.protoVersion == ProtocolVersion.XML
-                    ? new XmlMessageHandler(listener)
-                    : new JsonMessageHandler(listener, desc.protoVersion);
+            final ReportParser parser = desc.protoVersion == ProtocolVersion.XML
+                    ? new XmlReportParser(this, listener, gson)
+                    : new JsonReportParser(this, listener, desc.protoVersion, gson);
             String topic = String.format("iot/atr/+/%s/%s/%s/+", device.getDid(), device.getDeviceClass(),
                     device.getResource());
             client.subscribeWith().topicFilter(topic).callback(publish -> {
+                String receivedTopic = publish.getTopic().toString();
                 String payload = new String(publish.getPayloadAsBytes());
                 try {
-                    messageHandler.handleMessage(publish.getTopic().toString(), payload);
+                    String eventName = receivedTopic.split("/")[2].toLowerCase();
+                    logger.trace("{}: Got MQTT message on topic {}: {}", getSerialNumber(), receivedTopic, payload);
+                    parser.handleMessage(eventName, payload);
                 } catch (Exception e) {
                     listener.onEventStreamFailure(this, e);
                 }
@@ -214,151 +203,5 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
                 return new TrustManager[] { noOpTrustManager };
             }
         };
-    }
-
-    private interface MessageHandler {
-        void handleMessage(String topic, String payload) throws Exception;
-    }
-
-    private class XmlMessageHandler implements MessageHandler {
-        private final EventListener listener;
-
-        XmlMessageHandler(EventListener listener) {
-            this.listener = listener;
-        }
-
-        @Override
-        public void handleMessage(String topic, String payload) throws Exception {
-            logger.debug("{}: Got MQTT message on topic {}: {}", getSerialNumber(), topic, payload);
-            String event = XPathUtils.getFirstXPathMatch(payload, "//@td").getNodeValue();
-
-            switch (event.toLowerCase()) {
-                case "batteryinfo":
-                    listener.onBatteryLevelUpdated(EcovacsIotMqDevice.this, DeviceInfo.parseBatteryInfo(payload));
-                    break;
-                case "chargestate": {
-                    ChargeMode mode = DeviceInfo.parseChargeInfo(payload, gson);
-                    listener.onChargingStateUpdated(EcovacsIotMqDevice.this, mode == ChargeMode.CHARGING);
-                    break;
-                }
-                case "cleanreport": {
-                    CleanMode mode = CleaningInfo.parseCleanStateInfo(payload, gson);
-                    listener.onCleaningModeUpdated(EcovacsIotMqDevice.this, mode);
-                    // TODO: speed <ctl td='CleanReport'><clean type='auto' speed='standard' st='s' rsn='a'/></ctl>
-                    break;
-                }
-                case "cleanst": {
-                    String area = XPathUtils.getFirstXPathMatch(payload, "//@a").getNodeValue();
-                    String duration = XPathUtils.getFirstXPathMatch(payload, "//@l").getNodeValue();
-                    listener.onCleaningStatsUpdated(EcovacsIotMqDevice.this, Integer.valueOf(area),
-                            Integer.valueOf(duration));
-                    break;
-                }
-                case "error":
-                    DeviceInfo.parseErrorInfo(payload).ifPresent(errorCode -> {
-                        listener.onErrorReported(EcovacsIotMqDevice.this, errorCode);
-                    });
-                    break;
-            }
-            // TODO: need to update water system info
-            // TODO:
-            // <ctl td='CleanRptBgdata' ts='1643044172' Battery='102' CleanID='1333688018' iCleanID='0497265223'
-            // MapID='1430814334' rsn='a' IsFrmCharger='1' CleanType='auto' Speed='standard' OnOffRag='0' WorkMode='s'
-            // Spray='2' WorkArea='002'/>
-            // <ctl ts='1643037483' td='SleepStatus' st='0'/>
-        }
-    }
-
-    private class JsonMessageHandler implements MessageHandler {
-        private final EventListener listener;
-        private String lastFirmwareVersion = "";
-
-        JsonMessageHandler(EventListener listener, ProtocolVersion version) {
-            this.listener = listener;
-        }
-
-        @Override
-        public void handleMessage(String topic, String payload) {
-            String eventName = topic.split("/")[2].toLowerCase();
-            JsonResponsePayloadWrapper response = gson.fromJson(payload, JsonResponsePayloadWrapper.class);
-            if (response == null) {
-                return;
-            }
-            if (!lastFirmwareVersion.equals(response.header.firmwareVersion)) {
-                lastFirmwareVersion = response.header.firmwareVersion;
-                listener.onFirmwareVersionChanged(EcovacsIotMqDevice.this, lastFirmwareVersion);
-            }
-
-            if (eventName.startsWith("on")) {
-                eventName = eventName.substring(2);
-            } else if (eventName.startsWith("report")) {
-                eventName = eventName.substring(6);
-            }
-
-            logger.trace("{}: Got MQTT message on topic {}: {}", getSerialNumber(), topic, payload);
-
-            switch (eventName) {
-                case "battery": {
-                    BatteryReport report = payloadAs(response, BatteryReport.class);
-                    listener.onBatteryLevelUpdated(EcovacsIotMqDevice.this, report.percent);
-                    break;
-                }
-                case "chargestate": {
-                    ChargeReport report = payloadAs(response, ChargeReport.class);
-                    listener.onChargingStateUpdated(EcovacsIotMqDevice.this, report.isCharging != 0);
-                    break;
-                }
-                case "cleaninfo": {
-                    CleanReport report = payloadAs(response, CleanReport.class);
-                    listener.onCleaningModeUpdated(EcovacsIotMqDevice.this, report.determineCleanMode(gson));
-                    break;
-                }
-                case "cleaninfo_v2": {
-                    CleanReportV2 report = payloadAs(response, CleanReportV2.class);
-                    listener.onCleaningModeUpdated(EcovacsIotMqDevice.this, report.determineCleanMode(gson));
-                    break;
-                }
-                case "error": {
-                    ErrorReport report = payloadAs(response, ErrorReport.class);
-                    for (Integer code : report.errorCodes) {
-                        listener.onErrorReported(EcovacsIotMqDevice.this, code);
-                    }
-                }
-                case "evt": {
-                    // EventReport report = payloadAs(reponse, EventReport.class);
-                    break;
-                }
-                case "lifespan": {
-                    // ComponentLifeSpanReport report = payloadAs(response, ComponentLifeSpanReport.class);
-                    break;
-                }
-                case "speed": {
-                    // SpeedReport report = payloadAs(response, SpeedReport.class);
-                    // SuctionPower power = SuctionPower.fromJsonValue(report.speedLevel);
-                    // TODO: report change
-                    break;
-                }
-                case "stats": {
-                    StatsReport report = payloadAs(response, StatsReport.class);
-                    listener.onCleaningStatsUpdated(EcovacsIotMqDevice.this, report.area, report.timeInSeconds);
-                    break;
-                }
-                case "waterinfo": {
-                    WaterInfoReport report = payloadAs(response, WaterInfoReport.class);
-                    listener.onWaterSystemUpdated(EcovacsIotMqDevice.this, report.waterPlatePresent != 0,
-                            MoppingWaterAmount.fromApiValue(report.waterAmount));
-                    break;
-                }
-            }
-        }
-
-        private <T> T payloadAs(JsonResponsePayloadWrapper response, Class<T> clazz) {
-            @Nullable
-            T payload = gson.fromJson(response.body.payload, clazz);
-            if (payload == null) {
-                throw new IllegalArgumentException("Null payload");
-            }
-            return payload;
-        }
     }
 }
