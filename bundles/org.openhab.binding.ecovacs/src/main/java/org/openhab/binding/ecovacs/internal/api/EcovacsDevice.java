@@ -19,7 +19,6 @@ import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
-import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
 import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
 
 /**
@@ -40,7 +39,7 @@ public interface EcovacsDevice {
 
         void onCleaningStatsUpdated(EcovacsDevice device, int cleanedArea, int cleaningTimeSeconds);
 
-        void onWaterSystemUpdated(EcovacsDevice device, boolean present, MoppingWaterAmount amount);
+        void onWaterSystemPresentUpdated(EcovacsDevice device, boolean present);
 
         void onErrorReported(EcovacsDevice device, int errorCode);
 

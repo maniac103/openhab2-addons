@@ -24,7 +24,6 @@ import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.StatsReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.WaterInfoReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse.JsonResponsePayloadWrapper;
-import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
 
 import com.google.gson.Gson;
 
@@ -109,8 +108,7 @@ class JsonReportParser implements ReportParser {
             }
             case "waterinfo": {
                 WaterInfoReport report = payloadAs(response, WaterInfoReport.class);
-                listener.onWaterSystemUpdated(device, report.waterPlatePresent != 0,
-                        MoppingWaterAmount.fromApiValue(report.waterAmount));
+                listener.onWaterSystemPresentUpdated(device, report.waterPlatePresent != 0);
                 break;
             }
         }

@@ -209,7 +209,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                     fetchInitialStateAndCommandValues();
                     break;
                 case CHANNEL_ID_WATER_PLATE_PRESENT:
-                    fetchInitialWaterSystemValues();
+                    fetchInitialWaterSystemPresentState();
                     break;
                 case CHANNEL_ID_ERROR_CODE:
                 case CHANNEL_ID_ERROR_DESCRIPTION:
@@ -262,9 +262,8 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     }
 
     @Override
-    public void onWaterSystemUpdated(EcovacsDevice device, boolean present, MoppingWaterAmount amount) {
+    public void onWaterSystemPresentUpdated(EcovacsDevice device, boolean present) {
         updateState(CHANNEL_ID_WATER_PLATE_PRESENT, OnOffType.from(present));
-        updateState(CHANNEL_ID_WATER_AMOUNT, new StringType(WATER_AMOUNT_MAPPING.get(amount)));
     }
 
     @Override
@@ -308,14 +307,13 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         });
     }
 
-    private void fetchInitialWaterSystemValues() throws EcovacsApiException {
+    private void fetchInitialWaterSystemPresentState() throws EcovacsApiException {
         doWithDevice(device -> {
             if (!device.hasCapability(DeviceCapability.MOPPING_SYSTEM)) {
                 return;
             }
             boolean present = device.sendCommand(new GetWaterSystemPresentCommand());
-            MoppingWaterAmount amount = device.sendCommand(new GetMoppingWaterAmountCommand());
-            onWaterSystemUpdated(device, present, amount);
+            onWaterSystemPresentUpdated(device, present);
         });
     }
 
@@ -408,7 +406,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
             updateStatus(ThingStatus.ONLINE);
             fetchInitialBatteryStatus();
             fetchInitialStateAndCommandValues();
-            fetchInitialWaterSystemValues(); // nop if unsupported
+            fetchInitialWaterSystemPresentState(); // nop if unsupported
             fetchInitialErrorCode();
             startPolling(0);
         });

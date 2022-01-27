@@ -17,6 +17,7 @@ import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice.EventListener;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.CleaningInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.DeviceInfo;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.WaterSystemInfo;
 import org.openhab.binding.ecovacs.internal.api.model.ChargeMode;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
@@ -83,6 +84,9 @@ class XmlReportParser implements ReportParser {
                 DeviceInfo.parseErrorInfo(payload).ifPresent(errorCode -> {
                     listener.onErrorReported(device, errorCode);
                 });
+                break;
+            case "waterboxinfo":
+                listener.onWaterSystemPresentUpdated(device, WaterSystemInfo.parseWaterBoxInfo(payload));
                 break;
         }
         // TODO: need to update water system info
