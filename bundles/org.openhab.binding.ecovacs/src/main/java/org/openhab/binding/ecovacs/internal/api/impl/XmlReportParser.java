@@ -20,6 +20,7 @@ import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml.
 import org.openhab.binding.ecovacs.internal.api.model.ChargeMode;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
+import org.w3c.dom.Node;
 
 import com.google.gson.Gson;
 
@@ -46,6 +47,9 @@ class XmlReportParser implements ReportParser {
                 break;
             case "chargestate": {
                 ChargeMode mode = DeviceInfo.parseChargeInfo(payload, gson);
+                if (mode == ChargeMode.RETURNING) {
+                    listener.onCleaningModeUpdated(device, CleanMode.RETURNING);
+                }
                 listener.onChargingStateUpdated(device, mode == ChargeMode.CHARGING);
                 break;
             }
@@ -53,6 +57,20 @@ class XmlReportParser implements ReportParser {
                 CleanMode mode = CleaningInfo.parseCleanStateInfo(payload, gson);
                 listener.onCleaningModeUpdated(device, mode);
                 // TODO: speed <ctl td='CleanReport'><clean type='auto' speed='standard' st='s' rsn='a'/></ctl>
+                break;
+            }
+            case "cleanrptbgdata": {
+                Node fromChargerNode = XPathUtils.getFirstXPathMatch(payload, "//@IsFrmCharger");
+                if ("1".equals(fromChargerNode.getNodeValue())) {
+                    // Device just started cleaning, but likely won't send us a ChargeState report,
+                    // so update charging state from here
+                    listener.onChargingStateUpdated(device, false);
+                }
+                // Full report:
+                // <ctl td='CleanRptBgdata' ts='1643044172' Battery='102' CleanID='1333688018' iCleanID='0497265223'
+                // MapID='1430814334' rsn='a' IsFrmCharger='1' CleanType='auto' Speed='standard' OnOffRag='0'
+                // WorkMode='s'
+                // Spray='2' WorkArea='002'/>
                 break;
             }
             case "cleanst": {
@@ -68,10 +86,5 @@ class XmlReportParser implements ReportParser {
                 break;
         }
         // TODO: need to update water system info
-        // TODO:
-        // <ctl td='CleanRptBgdata' ts='1643044172' Battery='102' CleanID='1333688018' iCleanID='0497265223'
-        // MapID='1430814334' rsn='a' IsFrmCharger='1' CleanType='auto' Speed='standard' OnOffRag='0' WorkMode='s'
-        // Spray='2' WorkArea='002'/>
-        // <ctl ts='1643037483' td='SleepStatus' st='0'/>
     }
 }
