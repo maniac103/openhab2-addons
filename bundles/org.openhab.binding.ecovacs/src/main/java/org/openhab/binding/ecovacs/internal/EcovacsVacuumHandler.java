@@ -429,7 +429,8 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                         new DateTimeType(record.timestamp.toInstant().atZone(ZoneId.systemDefault())));
                 updateState(CHANNEL_ID_LAST_CLEAN_DURATION, new QuantityType<>(record.cleaningDuration, Units.SECOND));
                 updateState(CHANNEL_ID_LAST_CLEAN_AREA, new QuantityType<>(record.cleanedArea, SIUnits.SQUARE_METRE));
-                updateState(CHANNEL_ID_LAST_CLEAN_MODE, new StringType(CLEAN_MODE_MAPPING.get(record.mode)));
+                String mode = CLEAN_MODE_MAPPING.get(record.mode);
+                updateState(CHANNEL_ID_LAST_CLEAN_MODE, mode != null ? new StringType(null) : UnDefType.NULL);
                 if (device.hasCapability(DeviceCapability.MAPPING) && !lastCleanMapUrl.equals(record.mapImageUrl)) {
                     // HttpUtil expects the server to return the correct MIME type, but Ecovacs' server doesn't obey
                     State mapState = record.mapImageUrl.flatMap(url -> {

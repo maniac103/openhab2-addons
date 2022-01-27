@@ -29,6 +29,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiConfiguration;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
+import org.openhab.binding.ecovacs.internal.api.commands.GetCleanLogsCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.GetFirmwareVersionCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.Device;
@@ -94,10 +95,14 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
 
     @Override
     public List<CleanLogRecord> getCleanLogs() throws EcovacsApiException {
-        return api.fetchCleanLogs(device).stream().sorted((lhs, rhs) -> Long.compare(rhs.timestamp, lhs.timestamp))
-                .map(record -> new CleanLogRecord(record.timestamp, record.duration, record.area,
-                        Optional.ofNullable(record.imageUrl), record.type))
-                .collect(Collectors.toList());
+        Stream<CleanLogRecord> logEntries;
+        if (desc.protoVersion == ProtocolVersion.XML) {
+            logEntries = sendCommand(new GetCleanLogsCommand()).stream();
+        } else {
+            logEntries = api.fetchCleanLogs(device).stream().map(record -> new CleanLogRecord(record.timestamp,
+                    record.duration, record.area, Optional.ofNullable(record.imageUrl), record.type));
+        }
+        return logEntries.sorted((lhs, rhs) -> rhs.timestamp.compareTo(lhs.timestamp)).collect(Collectors.toList());
     }
 
     @Override
