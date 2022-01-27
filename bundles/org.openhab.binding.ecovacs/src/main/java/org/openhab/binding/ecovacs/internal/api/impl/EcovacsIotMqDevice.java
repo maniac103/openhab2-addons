@@ -17,6 +17,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
@@ -173,7 +174,13 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     public void stopListeningForEvents() {
         Mqtt3AsyncClient client = this.mqttClient;
         if (client != null) {
-            client.disconnect();
+            client.disconnect().whenComplete((nop, error) -> {
+                if (error != null) {
+                    logger.debug("Closing MQTT connection to device {} failed", getSerialNumber(), error);
+                } else {
+                    logger.debug("Closed MQTT connection to device {}", getSerialNumber());
+                }
+            });
         }
     }
 

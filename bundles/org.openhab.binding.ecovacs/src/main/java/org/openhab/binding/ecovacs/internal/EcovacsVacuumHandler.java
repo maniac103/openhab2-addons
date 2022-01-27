@@ -186,7 +186,6 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     @Override
     public void dispose() {
         logger.debug("{}: Disposing handler", getDeviceSerial());
-        super.dispose();
         EcovacsDevice device = this.device;
         if (device != null) {
             device.stopListeningForEvents();
@@ -282,10 +281,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     @Override
     public void onEventStreamFailure(final EcovacsDevice device, Throwable error) {
         logger.debug("{}: Device connection failed, reconnecting", getDeviceSerial(), error);
-        device.stopListeningForEvents();
-        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-        stopPolling();
-        scheduleReconnection();
+        teardownAndScheduleReconnection();
     }
 
     @Override
@@ -389,7 +385,14 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         }
     }
 
-    private synchronized void scheduleReconnection() {
+    private synchronized void teardownAndScheduleReconnection() {
+        EcovacsDevice device = this.device;
+        if (device != null) {
+            device.stopListeningForEvents();
+        }
+        stopPolling();
+        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+
         if (reconnectFuture == null) {
             reconnectFuture = scheduler.schedule(() -> {
                 reconnectFuture = null;
@@ -554,9 +557,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                 return;
             }
             logger.debug("{}: Failed communicating to device, reconnecting", getDeviceSerial(), e);
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-            stopPolling();
-            scheduleReconnection();
+            teardownAndScheduleReconnection();
         }
     }
 
