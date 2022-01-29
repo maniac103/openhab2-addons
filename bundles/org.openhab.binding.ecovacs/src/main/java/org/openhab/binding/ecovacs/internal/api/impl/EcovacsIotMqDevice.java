@@ -13,7 +13,6 @@
 package org.openhab.binding.ecovacs.internal.api.impl;
 
 import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -22,7 +21,6 @@ import java.util.stream.Stream;
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -36,6 +34,7 @@ import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.Device;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalLoginResponse;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
+import org.openhab.core.io.net.http.TrustAllTrustManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,21 +178,6 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     }
 
     private TrustManagerFactory createTrustManagerFactory() {
-        final TrustManager noOpTrustManager = new X509TrustManager() {
-            @Override
-            public void checkClientTrusted(final X509Certificate @Nullable [] chain, final @Nullable String authType) {
-            }
-
-            @Override
-            public void checkServerTrusted(final X509Certificate @Nullable [] chain, final @Nullable String authType) {
-            }
-
-            @Override
-            public X509Certificate[] getAcceptedIssuers() {
-                return new X509Certificate[0];
-            }
-        };
-
         return new SimpleTrustManagerFactory() {
             @Override
             protected void engineInit(@Nullable KeyStore keyStore) throws Exception {
@@ -205,7 +189,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
 
             @Override
             protected TrustManager[] engineGetTrustManagers() {
-                return new TrustManager[] { noOpTrustManager };
+                return new TrustManager[] { TrustAllTrustManager.getInstance() };
             }
         };
     }

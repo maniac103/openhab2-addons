@@ -39,6 +39,7 @@ import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalI
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalLoginResponse;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
 import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
+import org.openhab.core.io.net.http.TrustAllTrustManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,7 +136,7 @@ public class EcovacsXmppDevice implements EcovacsDevice {
 
             XMPPTCPConnectionConfiguration connConfig = XMPPTCPConnectionConfiguration.builder().setHost(host)
                     .setPort(5223).setUsernameAndPassword(userName, password).setXmppDomain(config.getRealm())
-                    .setSendPresence(false).build();
+                    .setCustomX509TrustManager(TrustAllTrustManager.getInstance()).setSendPresence(false).build();
 
             XMPPTCPConnection conn = new XMPPTCPConnection(connConfig);
             conn.addConnectionListener(new ConnectionListener() {
