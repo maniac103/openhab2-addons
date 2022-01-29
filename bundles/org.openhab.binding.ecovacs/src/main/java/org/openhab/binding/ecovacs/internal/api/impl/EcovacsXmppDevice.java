@@ -126,7 +126,6 @@ public class EcovacsXmppDevice implements EcovacsDevice {
 
         logger.trace("{}: Connecting to XMPP", getSerialNumber());
 
-        String userName = String.format("%s@%s", loginData.getUserId(), config.getRealm());
         String password = String.format("0/%s/%s", loginData.getResource(), loginData.getToken());
         String host = String.format("msg-%s.%s", config.getContinent(), config.getRealm());
 
@@ -135,7 +134,8 @@ public class EcovacsXmppDevice implements EcovacsDevice {
             this.targetAddress = JidCreate.from(device.getDid(), device.getDeviceClass() + ".ecorobot.net", "atom");
 
             XMPPTCPConnectionConfiguration connConfig = XMPPTCPConnectionConfiguration.builder().setHost(host)
-                    .setPort(5223).setUsernameAndPassword(userName, password).setXmppDomain(config.getRealm())
+                    .setPort(5223).setUsernameAndPassword(loginData.getUserId(), password)
+                    .setResource(loginData.getResource()).setXmppDomain(config.getRealm())
                     .setCustomX509TrustManager(TrustAllTrustManager.getInstance()).setSendPresence(false).build();
 
             XMPPTCPConnection conn = new XMPPTCPConnection(connConfig);
