@@ -199,21 +199,26 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void channelLinked(ChannelUID channelUID) {
+        EcovacsDevice device = this.device;
+        if (device == null) {
+            return;
+        }
+
         try {
             switch (channelUID.getId()) {
                 case CHANNEL_ID_BATTERY_LEVEL:
-                    fetchInitialBatteryStatus();
+                    fetchInitialBatteryStatus(device);
                     break;
                 case CHANNEL_ID_STATE:
                 case CHANNEL_ID_COMMAND:
-                    fetchInitialStateAndCommandValues();
+                    fetchInitialStateAndCommandValues(device);
                     break;
                 case CHANNEL_ID_WATER_PLATE_PRESENT:
-                    fetchInitialWaterSystemPresentState();
+                    fetchInitialWaterSystemPresentState(device);
                     break;
                 case CHANNEL_ID_ERROR_CODE:
                 case CHANNEL_ID_ERROR_DESCRIPTION:
-                    fetchInitialErrorCode();
+                    fetchInitialErrorCode(device);
                 default:
                     startPolling(5); // add some delay in case multiple channels are linked at once
                     break;
@@ -288,42 +293,34 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         updateProperty(Thing.PROPERTY_FIRMWARE_VERSION, fwVersion);
     }
 
-    private void fetchInitialBatteryStatus() throws EcovacsApiException {
-        doWithDevice(device -> {
-            Integer batteryPercent = device.sendCommand(new GetBatteryInfoCommand());
-            onBatteryLevelUpdated(device, batteryPercent);
-        });
+    private void fetchInitialBatteryStatus(EcovacsDevice device) throws EcovacsApiException {
+        Integer batteryPercent = device.sendCommand(new GetBatteryInfoCommand());
+        onBatteryLevelUpdated(device, batteryPercent);
     }
 
-    private void fetchInitialStateAndCommandValues() throws EcovacsApiException {
-        doWithDevice(device -> {
-            lastWasCharging = device.sendCommand(new GetChargeStateCommand()) == ChargeMode.CHARGING;
-            CleanMode mode = device.sendCommand(new GetCleanStateCommand());
-            if (mode.isActive()) {
-                lastActiveCleanMode = mode;
-            }
-            lastCleanMode = mode;
-            updateStateAndCommandChannels();
-        });
+    private void fetchInitialStateAndCommandValues(EcovacsDevice device) throws EcovacsApiException {
+        lastWasCharging = device.sendCommand(new GetChargeStateCommand()) == ChargeMode.CHARGING;
+        CleanMode mode = device.sendCommand(new GetCleanStateCommand());
+        if (mode.isActive()) {
+            lastActiveCleanMode = mode;
+        }
+        lastCleanMode = mode;
+        updateStateAndCommandChannels();
     }
 
-    private void fetchInitialWaterSystemPresentState() throws EcovacsApiException {
-        doWithDevice(device -> {
-            if (!device.hasCapability(DeviceCapability.MOPPING_SYSTEM)) {
-                return;
-            }
-            boolean present = device.sendCommand(new GetWaterSystemPresentCommand());
-            onWaterSystemPresentUpdated(device, present);
-        });
+    private void fetchInitialWaterSystemPresentState(EcovacsDevice device) throws EcovacsApiException {
+        if (!device.hasCapability(DeviceCapability.MOPPING_SYSTEM)) {
+            return;
+        }
+        boolean present = device.sendCommand(new GetWaterSystemPresentCommand());
+        onWaterSystemPresentUpdated(device, present);
     }
 
-    private void fetchInitialErrorCode() throws EcovacsApiException {
-        doWithDevice(device -> {
-            Optional<Integer> errorOpt = device.sendCommand(new GetErrorCommand());
-            if (errorOpt.isPresent()) {
-                onErrorReported(device, errorOpt.get());
-            }
-        });
+    private void fetchInitialErrorCode(EcovacsDevice device) throws EcovacsApiException {
+        Optional<Integer> errorOpt = device.sendCommand(new GetErrorCommand());
+        if (errorOpt.isPresent()) {
+            onErrorReported(device, errorOpt.get());
+        }
     }
 
     private void removeUnsupportedChannels(EcovacsDevice device) {
@@ -404,10 +401,10 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
             device.listenForEvents(this);
             logger.debug("{}: Device connected", getDeviceSerial());
             updateStatus(ThingStatus.ONLINE);
-            fetchInitialBatteryStatus();
-            fetchInitialStateAndCommandValues();
-            fetchInitialWaterSystemPresentState(); // nop if unsupported
-            fetchInitialErrorCode();
+            fetchInitialBatteryStatus(device);
+            fetchInitialStateAndCommandValues(device);
+            fetchInitialWaterSystemPresentState(device); // nop if unsupported
+            fetchInitialErrorCode(device);
             startPolling(0);
         });
     }
