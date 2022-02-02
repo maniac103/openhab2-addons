@@ -55,9 +55,9 @@ public interface EcovacsDevice {
 
     public boolean hasCapability(DeviceCapability cap);
 
-    public void listenForEvents(EventListener listener, ScheduledExecutorService scheduler) throws EcovacsApiException;
+    public void connect(EventListener listener, ScheduledExecutorService scheduler) throws EcovacsApiException;
 
-    public void stopListeningForEvents();
+    public void disconnect();
 
     public <T> T sendCommand(IotDeviceCommand<T> command) throws EcovacsApiException;
 

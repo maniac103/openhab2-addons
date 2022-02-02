@@ -106,8 +106,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     }
 
     @Override
-    public void listenForEvents(final EventListener listener, ScheduledExecutorService scheduler)
-            throws EcovacsApiException {
+    public void connect(final EventListener listener, ScheduledExecutorService scheduler) throws EcovacsApiException {
         EcovacsApiConfiguration config = api.getConfig();
         PortalLoginResponse loginData = api.getLoginData();
         if (loginData == null) {
@@ -166,7 +165,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     }
 
     @Override
-    public void stopListeningForEvents() {
+    public void disconnect() {
         Mqtt3AsyncClient client = this.mqttClient;
         if (client != null) {
             client.disconnect().whenComplete((nop, error) -> {

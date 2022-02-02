@@ -153,7 +153,7 @@ public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
     }
 
     @Override
-    public void listenForEvents(final EventListener listener, final ScheduledExecutorService scheduler)
+    public void connect(final EventListener listener, final ScheduledExecutorService scheduler)
             throws EcovacsApiException {
         EcovacsApiConfiguration config = api.getConfig();
         PortalLoginResponse loginData = api.getLoginData();
@@ -221,7 +221,7 @@ public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
     }
 
     @Override
-    public void stopListeningForEvents() {
+    public void disconnect() {
         XMPPTCPConnection conn = this.connection;
         if (conn != null) {
             conn.disconnect();

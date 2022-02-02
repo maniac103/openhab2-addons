@@ -188,7 +188,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         logger.debug("{}: Disposing handler", getDeviceSerial());
         EcovacsDevice device = this.device;
         if (device != null) {
-            device.stopListeningForEvents();
+            device.disconnect();
         }
         ScheduledFuture<?> reconnectFuture = this.reconnectFuture;
         if (reconnectFuture != null) {
@@ -383,7 +383,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     private synchronized void teardownAndScheduleReconnection() {
         EcovacsDevice device = this.device;
         if (device != null) {
-            device.stopListeningForEvents();
+            device.disconnect();
         }
         stopPolling();
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
@@ -398,7 +398,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     private void connectToDevice() {
         doWithDevice(device -> {
-            device.listenForEvents(this, scheduler);
+            device.connect(this, scheduler);
             logger.debug("{}: Device connected", getDeviceSerial());
             updateStatus(ThingStatus.ONLINE);
             fetchInitialBatteryStatus(device);
