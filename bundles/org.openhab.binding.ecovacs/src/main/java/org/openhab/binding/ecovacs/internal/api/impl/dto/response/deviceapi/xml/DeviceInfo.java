@@ -47,7 +47,10 @@ public class DeviceInfo {
         for (String attr : ERROR_ATTR_NAMES) {
             Optional<Node> node = XPathUtils.getFirstXPathMatchOpt(xml, "//@" + attr);
             if (node.isPresent()) {
-                return node.map(n -> Integer.valueOf(n.getNodeValue()));
+                return node.flatMap(n -> {
+                    String value = n.getNodeValue();
+                    return value.isEmpty() ? Optional.empty() : Optional.of(Integer.valueOf(value));
+                });
             }
         }
         return Optional.empty();
