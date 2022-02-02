@@ -244,7 +244,7 @@ public final class EcovacsApiImpl implements EcovacsApi {
         final Object payload;
         try {
             if (desc.protoVersion == ProtocolVersion.XML) {
-                payload = command.getXmlPayload();
+                payload = command.getXmlPayload(null);
                 logger.trace("{}: Sending IOT command {} with payload {}", device.getName(), commandName, payload);
             } else {
                 payload = command.getJsonPayload(desc.protoVersion, gson);

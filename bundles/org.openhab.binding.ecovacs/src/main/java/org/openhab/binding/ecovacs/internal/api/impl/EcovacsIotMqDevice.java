@@ -15,6 +15,7 @@ package org.openhab.binding.ecovacs.internal.api.impl;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -105,7 +106,8 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     }
 
     @Override
-    public void listenForEvents(final EventListener listener) throws EcovacsApiException {
+    public void listenForEvents(final EventListener listener, ScheduledExecutorService scheduler)
+            throws EcovacsApiException {
         EcovacsApiConfiguration config = api.getConfig();
         PortalLoginResponse loginData = api.getLoginData();
         if (loginData == null) {

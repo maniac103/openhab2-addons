@@ -43,10 +43,13 @@ public abstract class IotDeviceCommand<RESPONSETYPE> {
 
     public abstract String getName(ProtocolVersion version);
 
-    public final String getXmlPayload() throws Exception {
+    public final String getXmlPayload(@Nullable String id) throws Exception {
         Document xmlDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         Element ctl = xmlDoc.createElement("ctl");
         ctl.setAttribute("td", getName(ProtocolVersion.XML));
+        if (id != null) {
+            ctl.setAttribute("id", id);
+        }
         applyXmlPayload(xmlDoc, ctl);
         xmlDoc.appendChild(ctl);
         Transformer tf = TransformerFactory.newInstance().newTransformer();

@@ -398,7 +398,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     private void connectToDevice() {
         doWithDevice(device -> {
-            device.listenForEvents(this);
+            device.listenForEvents(this, scheduler);
             logger.debug("{}: Device connected", getDeviceSerial());
             updateStatus(ThingStatus.ONLINE);
             fetchInitialBatteryStatus(device);

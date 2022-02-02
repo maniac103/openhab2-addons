@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api;
 
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.ecovacs.internal.api.commands.IotDeviceCommand;
@@ -54,7 +55,7 @@ public interface EcovacsDevice {
 
     public boolean hasCapability(DeviceCapability cap);
 
-    public void listenForEvents(EventListener listener) throws EcovacsApiException;
+    public void listenForEvents(EventListener listener, ScheduledExecutorService scheduler) throws EcovacsApiException;
 
     public void stopListeningForEvents();
 
