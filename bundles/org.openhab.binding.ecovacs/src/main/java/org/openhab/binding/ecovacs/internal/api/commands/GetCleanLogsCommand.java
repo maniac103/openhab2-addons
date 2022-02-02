@@ -26,6 +26,8 @@ import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.Abstrac
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
 import org.openhab.binding.ecovacs.internal.api.model.CleanLogRecord;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
 
@@ -36,12 +38,19 @@ import com.google.gson.Gson;
  */
 @NonNullByDefault
 public class GetCleanLogsCommand extends IotDeviceCommand<List<CleanLogRecord>> {
+    private static final int LOG_SIZE = 20;
+
     @Override
     public String getName(ProtocolVersion version) {
         if (version != ProtocolVersion.XML) {
             throw new IllegalStateException("Command is only supported for XML");
         }
         return "GetCleanLogs";
+    }
+
+    @Override
+    protected void applyXmlPayload(Document doc, Element ctl) {
+        ctl.setAttribute("count", String.valueOf(LOG_SIZE));
     }
 
     @Override
