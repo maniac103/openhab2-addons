@@ -1,5 +1,99 @@
 [
     {
+        "modelName": "DEEBOT 600 Series",
+        "deviceClass": "dl8fht",
+        "protoVersion": "xml",
+        "usesMqtt": true,
+        "capabilities": [
+            "mopping_system",
+            "main_brush",
+            "clean_speed_control"
+        ]
+    },
+    {
+        "modelName": "DEEBOT OZMO 601",
+        "deviceClass": "159",
+        "deviceClassLink": "dl8fht"
+    },
+    {
+        "modelName": "DEEBOT 661",
+        "deviceClass": "16wdph",
+        "deviceClassLink": "dl8fht"
+    },
+
+    {
+        "modelName": "DEEBOT OZMO 610 Series",
+        "deviceClass": "130",
+        "protoVersion": "xml",
+        "usesMqtt": false,
+        "capabilities": [
+            "mopping_system",
+            "main_brush",
+            "single_room_cleaning",
+            "clean_speed_control"
+        ]
+    },
+
+    {
+        "modelName": "DEEBOT 710",
+        "deviceClass": "uv242z",
+        "protoVersion": "xml",
+        "usesMqtt": true,
+        "capabilities": [
+            "main_brush",
+            "clean_speed_control"
+        ]
+    },
+    {
+        "modelName": "DEEBOT 711",
+        "deviceClass": "jr3pqa",
+        "deviceClassLink": "uv242z"
+    },
+    {
+        "modelName": "DEEBOT 711s",
+        "deviceClass": "d0cnel",
+        "deviceClassLink": "uv242z"
+    },
+    {
+        "modelName": "DEEBOT 715",
+        "deviceClass": "eyi9jv",
+        "deviceClassLink": "uv242z"
+    },
+
+    {
+        "modelName": "DEEBOT 900 Series",
+        "deviceClass": "ls1ok3",
+        "protoVersion": "xml",
+        "usesMqtt": true,
+        "capabilities": [
+            "main_brush",
+            "spot_area_cleaning",
+            "custom_area_cleaning",
+            "clean_speed_control",
+            "mapping"
+        ]
+    },
+
+    {
+        "modelName": "DEEBOT OZMO 900 Series",
+        "deviceClass": "y79a7u",
+        "protoVersion": "xml",
+        "usesMqtt": true,
+        "capabilities": [
+            "mopping_system",
+            "main_brush",
+            "spot_area_cleaning",
+            "custom_area_cleaning",
+            "clean_speed_control"
+        ]
+    },
+    {
+        "modelName": "DEEBOT OZMO 905",
+        "deviceClass": "2pv572",
+        "deviceClassLink": "y79a7u"
+    },
+
+    {
         "modelName": "DEEBOT OZMO/PRO 930 Series",
         "deviceClass": "115",
         "protoVersion": "xml",
@@ -10,6 +104,15 @@
             "spot_area_cleaning",
             "custom_area_cleaning",
             "mapping"
+        ]
+    },
+
+    {
+        "modelName": "DEEBOT Slim2 Series",
+        "deviceClass": "123",
+        "protoVersion": "xml",
+        "usesMqtt": false,
+        "capabilities": [
         ]
     },
 
