@@ -24,17 +24,14 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.debugger.AbstractDebugger;
-import org.jivesoftware.smack.debugger.SmackDebugger;
-import org.jivesoftware.smack.debugger.SmackDebuggerFactory;
 import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler;
 import org.jivesoftware.smack.packet.ErrorIQ;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.IQ.Type;
+import org.jivesoftware.smack.packet.SimpleIQ;
 import org.jivesoftware.smack.packet.StanzaError;
 import org.jivesoftware.smack.provider.IQProvider;
 import org.jivesoftware.smack.provider.ProviderManager;
@@ -66,7 +63,7 @@ import com.google.gson.Gson;
  * @author Danny Baumann - Initial contribution
  */
 @NonNullByDefault
-public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
+public class EcovacsXmppDevice implements EcovacsDevice {
     private final Logger logger = LoggerFactory.getLogger(EcovacsXmppDevice.class);
 
     private final Device device;
@@ -74,10 +71,10 @@ public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
     private final EcovacsApiImpl api;
     private final Gson gson;
     private @Nullable IncomingMessageHandler messageHandler;
+    private @Nullable PingHandler pingHandler;
     private @Nullable XMPPTCPConnection connection;
     private @Nullable Jid ownAddress;
     private @Nullable Jid targetAddress;
-    private @Nullable Future<?> pingFuture;
 
     EcovacsXmppDevice(Device device, DeviceDescription desc, EcovacsApiImpl api, Gson gson) {
         this.device = device;
@@ -167,14 +164,13 @@ public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
         String host = String.format("msg-%s.%s", config.getContinent(), config.getRealm());
 
         try {
-            this.ownAddress = JidCreate.from(loginData.getUserId(), config.getRealm(), loginData.getResource());
-            this.targetAddress = JidCreate.from(device.getDid(), device.getDeviceClass() + ".ecorobot.net", "atom");
+            Jid ownAddress = JidCreate.from(loginData.getUserId(), config.getRealm(), loginData.getResource());
+            Jid targetAddress = JidCreate.from(device.getDid(), device.getDeviceClass() + ".ecorobot.net", "atom");
 
             XMPPTCPConnectionConfiguration connConfig = XMPPTCPConnectionConfiguration.builder().setHost(host)
                     .setPort(5223).setUsernameAndPassword(loginData.getUserId(), password)
                     .setResource(loginData.getResource()).setXmppDomain(config.getRealm())
-                    .setCustomX509TrustManager(TrustAllTrustManager.getInstance()).setSendPresence(false)
-                    .setDebuggerFactory(this).build();
+                    .setCustomX509TrustManager(TrustAllTrustManager.getInstance()).setSendPresence(false).build();
 
             XMPPTCPConnection conn = new XMPPTCPConnection(connConfig);
             conn.addConnectionListener(new ConnectionListener() {
@@ -200,19 +196,20 @@ public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
             });
 
             messageHandler = new IncomingMessageHandler(listener);
+            pingHandler = new PingHandler(conn, scheduler, listener, ownAddress, targetAddress);
 
             conn.registerIQRequestHandler(messageHandler);
             conn.connect();
+
             this.connection = conn;
+            this.ownAddress = ownAddress;
+            this.targetAddress = targetAddress;
 
             conn.login();
+            conn.setReplyTimeout(1000);
 
             listener.onFirmwareVersionChanged(this, sendCommand(new GetFirmwareVersionCommand()));
-
-            ReconnectionManager reconnectionManager = ReconnectionManager.getInstanceFor(conn);
-            reconnectionManager.enableAutomaticReconnection();
-
-            pingFuture = scheduler.scheduleWithFixedDelay(this::sendPing, 30, 30, TimeUnit.SECONDS);
+            pingHandler.start();
         } catch (EcovacsApiException e) {
             throw e;
         } catch (XMPPException | SmackException | InterruptedException | IOException e) {
@@ -227,11 +224,11 @@ public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
             conn.disconnect();
         }
         this.connection = null;
-        Future<?> pingFuture = this.pingFuture;
-        if (pingFuture != null) {
-            pingFuture.cancel(true);
+        PingHandler pingHandler = this.pingHandler;
+        if (pingHandler != null) {
+            pingHandler.stop();
         }
-        this.pingFuture = null;
+        this.pingHandler = null;
         IncomingMessageHandler handler = this.messageHandler;
         if (handler != null) {
             handler.dispose();
@@ -239,32 +236,73 @@ public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
         this.messageHandler = null;
     }
 
-    private void sendPing() {
-        Jid from = this.ownAddress;
-        Jid to = this.targetAddress;
-        if (from == null || to == null) {
-            return;
-        }
-        try {
-            this.connection.sendStanza(new PingIQ(from, to));
-        } catch (SmackException | InterruptedException e) {
-            // ignored
-        }
-    }
+    private class PingHandler {
+        private static final long INTERVAL = 30; // seconds
+        private static final int MAX_FAILURES = 4;
 
-    @Override
-    public SmackDebugger create(@Nullable XMPPConnection connection) throws IllegalArgumentException {
-        return new AbstractDebugger(connection) {
-            @Override
-            protected void log(@Nullable String logMessage) {
-                logger.trace("{}: {}", getSerialNumber(), logMessage);
+        private final XMPPTCPConnection connection;
+        private final ScheduledExecutorService scheduler;
+        private final EventListener listener;
+        private final Jid fromAddress;
+        private final Jid toAddress;
+        private @Nullable Future<?> nextPing;
+        private boolean started = false;
+        private int failedPings = 0;
+
+        PingHandler(XMPPTCPConnection connection, ScheduledExecutorService scheduler, EventListener listener, Jid from,
+                Jid to) {
+            this.connection = connection;
+            this.scheduler = scheduler;
+            this.listener = listener;
+            this.fromAddress = from;
+            this.toAddress = to;
+        }
+
+        public void start() {
+            started = true;
+            scheduleNextPing(0);
+        }
+
+        public void stop() {
+            started = false;
+            Future<?> nextPing = this.nextPing;
+            if (nextPing != null) {
+                nextPing.cancel(true);
+            }
+        }
+
+        private void sendPing() {
+            long timeSinceLastStanza = (System.currentTimeMillis() - connection.getLastStanzaReceived()) / 1000;
+            if (timeSinceLastStanza < INTERVAL) {
+                scheduleNextPing(timeSinceLastStanza);
+                return;
             }
 
-            @Override
-            protected void log(@Nullable String logMessage, @Nullable Throwable throwable) {
-                logger.trace("{}: {}", getSerialNumber(), logMessage, throwable);
+            try {
+                connection.sendIqRequestAndWaitForResponse(new PingIQ(fromAddress, toAddress));
+                logger.trace("{}: Pinged device", getSerialNumber());
+                failedPings = 0;
+            } catch (InterruptedException e) {
+                // only happens when we're stopped
+            } catch (XMPPException | SmackException e) {
+                ++failedPings;
+                logger.debug("{}: Ping failed (#{}): {})", getSerialNumber(), failedPings, e.getMessage());
+                if (failedPings >= MAX_FAILURES) {
+                    listener.onEventStreamFailure(EcovacsXmppDevice.this, e);
+                }
             }
-        };
+            scheduleNextPing(0);
+        }
+
+        private synchronized void scheduleNextPing(long delta) {
+            Future<?> oldFuture = this.nextPing;
+            if (oldFuture != null) {
+                oldFuture.cancel(true);
+            }
+            if (started) {
+                this.nextPing = scheduler.schedule(this::sendPing, INTERVAL - delta, TimeUnit.SECONDS);
+            }
+        }
     }
 
     private class IncomingMessageHandler extends AbstractIqRequestHandler {
@@ -297,8 +335,6 @@ public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
                 return null;
             }
 
-            logger.trace("{}: Incoming XMPP packet {}", getSerialNumber(), iqRequest);
-
             if (iqRequest instanceof DeviceCommandIQ) {
                 DeviceCommandIQ iq = (DeviceCommandIQ) iqRequest;
 
@@ -315,6 +351,7 @@ public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
                         Optional<String> eventNameOpt = XPathUtils.getFirstXPathMatchOpt(iq.payload, "//ctl/@td")
                                 .map(n -> n.getNodeValue());
                         if (eventNameOpt.isPresent()) {
+                            logger.trace("{}: Received event message XML {}", getSerialNumber(), iq.payload);
                             parser.handleMessage(eventNameOpt.get(), iq.payload);
                         } else {
                             logger.debug("{}: Got unexpected XML payload {}", getSerialNumber(), iq.payload);
@@ -380,18 +417,12 @@ public class EcovacsXmppDevice implements EcovacsDevice, SmackDebuggerFactory {
         }
     }
 
-    private static class PingIQ extends IQ {
+    private static class PingIQ extends SimpleIQ {
         public PingIQ(Jid from, Jid to) {
             super("ping", "urn:xmpp:ping");
             setType(Type.get);
             setFrom(from);
             setTo(to);
-        }
-
-        @Override
-        protected @Nullable IQChildElementXmlStringBuilder getIQChildElementBuilder(
-                @Nullable IQChildElementXmlStringBuilder xml) {
-            return xml;
         }
     }
 
