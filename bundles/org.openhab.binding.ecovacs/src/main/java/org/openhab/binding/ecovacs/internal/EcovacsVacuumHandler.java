@@ -104,6 +104,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     private @Nullable CleanMode lastCleanMode;
     private @Nullable CleanMode lastActiveCleanMode;
     private Optional<String> lastCleanMapUrl = Optional.empty();
+    private long lastSuccessfulPollTimestamp;
 
     public EcovacsVacuumHandler(Thing thing, TranslationProvider i18Provider, LocaleProvider localeProvider) {
         super(thing);
@@ -194,7 +195,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         if (reconnectFuture != null) {
             reconnectFuture.cancel(true);
         }
-        stopPolling();
+        cancelNextPoll();
     }
 
     @Override
@@ -220,7 +221,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                 case CHANNEL_ID_ERROR_DESCRIPTION:
                     fetchInitialErrorCode(device);
                 default:
-                    startPolling(5); // add some delay in case multiple channels are linked at once
+                    scheduleNextPoll(5); // add some delay in case multiple channels are linked at once
                     break;
             }
         } catch (EcovacsApiException e) {
@@ -249,7 +250,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         }
         updateStateAndCommandChannels();
         if (newMode == CleanMode.RETURNING) {
-            startPolling(30);
+            scheduleNextPoll(30);
         } else if (newMode == CleanMode.IDLE) {
             updateState(CHANNEL_ID_CLEANED_AREA, UnDefType.UNDEF);
             updateState(CHANNEL_ID_CLEANING_TIME, UnDefType.UNDEF);
@@ -362,17 +363,25 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         return true;
     }
 
-    private synchronized void startPolling(long initialDelaySeconds) {
-        stopPolling();
+    private synchronized void scheduleNextPoll(long initialDelaySeconds) {
+        cancelNextPoll();
 
         final EcovacsDeviceConfiguration config = getConfigAs(EcovacsDeviceConfiguration.class);
-        logger.debug("{}: Scheduling next poll in {}s, refresh interval {}min", getDeviceSerial(), initialDelaySeconds,
+        final long delayUntilNextPoll;
+        if (initialDelaySeconds < 0) {
+            long intervalSeconds = config.refresh * 60;
+            long secondsSinceLastPoll = (System.currentTimeMillis() - lastSuccessfulPollTimestamp) / 1000;
+            long deltaRemaining = intervalSeconds - secondsSinceLastPoll;
+            delayUntilNextPoll = Math.max(0, deltaRemaining);
+        } else {
+            delayUntilNextPoll = initialDelaySeconds;
+        }
+        logger.debug("{}: Scheduling next poll in {}s, refresh interval {}min", getDeviceSerial(), delayUntilNextPoll,
                 config.refresh);
-        pollFuture = scheduler.scheduleWithFixedDelay(this::pollData, initialDelaySeconds, config.refresh * 60,
-                TimeUnit.SECONDS);
+        pollFuture = scheduler.schedule(this::pollData, delayUntilNextPoll, TimeUnit.SECONDS);
     }
 
-    private synchronized void stopPolling() {
+    private synchronized void cancelNextPoll() {
         final ScheduledFuture<?> pollFuture = this.pollFuture;
         if (pollFuture != null) {
             pollFuture.cancel(true);
@@ -385,8 +394,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         if (device != null) {
             device.disconnect();
         }
-        stopPolling();
-        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+        cancelNextPoll();
 
         if (reconnectFuture == null) {
             reconnectFuture = scheduler.schedule(() -> {
@@ -405,7 +413,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
             fetchInitialStateAndCommandValues(device);
             fetchInitialWaterSystemPresentState(device); // nop if unsupported
             fetchInitialErrorCode(device);
-            startPolling(0);
+            scheduleNextPoll(-1);
         });
     }
 
@@ -471,6 +479,9 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                 int level = device.sendCommand(new GetVolumeCommand());
                 updateState(CHANNEL_ID_VOICE_VOLUME, new PercentType(level * 10));
             }
+
+            lastSuccessfulPollTimestamp = System.currentTimeMillis();
+            scheduleNextPoll(-1);
         });
         logger.debug("{}: Data polling completed", getDeviceSerial());
     }
@@ -553,6 +564,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                 return;
             }
             logger.debug("{}: Failed communicating to device, reconnecting", getDeviceSerial(), e);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
             teardownAndScheduleReconnection();
         }
     }
