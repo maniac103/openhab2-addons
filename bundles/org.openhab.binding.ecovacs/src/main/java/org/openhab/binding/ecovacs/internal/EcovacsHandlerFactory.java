@@ -40,16 +40,19 @@ import org.osgi.service.component.annotations.Reference;
 @NonNullByDefault
 @Component(configurationPid = "binding.ecovacs", service = ThingHandlerFactory.class)
 public class EcovacsHandlerFactory extends BaseThingHandlerFactory {
-    private HttpClientFactory httpClientFactory;
-    private LocaleProvider localeProvider;
-    private TranslationProvider i18Provider;
+    private final HttpClientFactory httpClientFactory;
+    private final LocaleProvider localeProvider;
+    private final TranslationProvider i18Provider;
+    private final EcovacsDynamicStateDescriptionProvider stateDescriptionProvider;
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_API, THING_TYPE_VACUUM);
 
     @Activate
     public EcovacsHandlerFactory(final @Reference HttpClientFactory httpClientFactory,
+            final @Reference EcovacsDynamicStateDescriptionProvider stateDescriptionProvider,
             final @Reference LocaleProvider localeProvider, final @Reference TranslationProvider i18Provider) {
         this.httpClientFactory = httpClientFactory;
+        this.stateDescriptionProvider = stateDescriptionProvider;
         this.localeProvider = localeProvider;
         this.i18Provider = i18Provider;
     }
@@ -66,7 +69,7 @@ public class EcovacsHandlerFactory extends BaseThingHandlerFactory {
         if (THING_TYPE_API.equals(thingTypeUID)) {
             return new EcovacsApiHandler((Bridge) thing, httpClientFactory, localeProvider);
         } else {
-            return new EcovacsVacuumHandler(thing, i18Provider, localeProvider);
+            return new EcovacsVacuumHandler(thing, i18Provider, localeProvider, stateDescriptionProvider);
         }
     }
 }

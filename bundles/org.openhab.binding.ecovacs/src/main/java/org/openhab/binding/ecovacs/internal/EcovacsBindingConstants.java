@@ -13,10 +13,11 @@
 package org.openhab.binding.ecovacs.internal;
 
 import java.util.HashMap;
-import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
+import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
 import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
 import org.openhab.core.thing.ThingTypeUID;
@@ -66,38 +67,67 @@ public class EcovacsBindingConstants {
     public static final String CMD_CHARGE = "charge";
     public static final String CMD_STOP = "stop";
 
-    public static final Map<CleanMode, String> CLEAN_MODE_MAPPING = new HashMap<>() {
+    public static class StateOptionEntry<T extends Enum<T>> {
+        public final T enumValue;
+        public final String value;
+        public final @Nullable DeviceCapability capability;
+
+        StateOptionEntry(T enumValue, String value) {
+            this(enumValue, value, null);
+        }
+
+        StateOptionEntry(T enumValue, String value, @Nullable DeviceCapability capability) {
+            this.enumValue = enumValue;
+            this.value = value;
+            this.capability = capability;
+        }
+    }
+
+    public static class StateOptionMapping<T extends Enum<T>> extends HashMap<T, StateOptionEntry<T>> {
         private static final long serialVersionUID = -6828690091106259902L;
-        {
-            put(CleanMode.AUTO, "auto");
-            put(CleanMode.EDGE, "edge");
-            put(CleanMode.SPOT, "spot");
-            put(CleanMode.SPOT_AREA, "spotArea");
-            put(CleanMode.CUSTOM_AREA, "customArea");
-            put(CleanMode.SINGLE_ROOM, "singleRoom");
-            put(CleanMode.PAUSE, "pause");
-            put(CleanMode.STOP, "stop");
-            put(CleanMode.RETURNING, "returning");
-        }
-    };
 
-    public static final Map<MoppingWaterAmount, String> WATER_AMOUNT_MAPPING = new HashMap<>() {
-        private static final long serialVersionUID = -1823016479841799204L;
-        {
-            put(MoppingWaterAmount.LOW, "low");
-            put(MoppingWaterAmount.MEDIUM, "medium");
-            put(MoppingWaterAmount.HIGH, "high");
-            put(MoppingWaterAmount.VERY_HIGH, "veryhigh");
+        public String getMappedValue(T key) {
+            StateOptionEntry<T> entry = get(key);
+            assert entry != null;
+            return entry.value;
         }
-    };
 
-    public static final Map<SuctionPower, String> SUCTION_POWER_MAPPING = new HashMap<>() {
-        private static final long serialVersionUID = 5799339360842532357L;
-        {
-            put(SuctionPower.SILENT, "silent");
-            put(SuctionPower.NORMAL, "normal");
-            put(SuctionPower.HIGH, "high");
-            put(SuctionPower.HIGHER, "higher");
+        public @Nullable T findMappedEnumValue(String value) {
+            return entrySet().stream().filter(entry -> entry.getValue().value.equals(value))
+                    .map(entry -> entry.getKey()).findFirst().get();
         }
-    };
+
+        @SafeVarargs
+        public static <T extends Enum<T>> StateOptionMapping<T> of(StateOptionEntry<T>... entries) {
+            StateOptionMapping<T> map = new StateOptionMapping<>();
+            for (StateOptionEntry<T> entry : entries) {
+                map.put(entry.enumValue, entry);
+            }
+            return map;
+        }
+    }
+
+    public static final StateOptionMapping<CleanMode> CLEAN_MODE_MAPPING = StateOptionMapping.<CleanMode> of(
+            new StateOptionEntry<CleanMode>(CleanMode.AUTO, "auto"),
+            new StateOptionEntry<CleanMode>(CleanMode.EDGE, "edge", DeviceCapability.EDGE_CLEANING),
+            new StateOptionEntry<CleanMode>(CleanMode.SPOT, "spot", DeviceCapability.SPOT_CLEANING),
+            new StateOptionEntry<CleanMode>(CleanMode.SPOT_AREA, "spotArea", DeviceCapability.SPOT_AREA_CLEANING),
+            new StateOptionEntry<CleanMode>(CleanMode.CUSTOM_AREA, "customArea", DeviceCapability.CUSTOM_AREA_CLEANING),
+            new StateOptionEntry<CleanMode>(CleanMode.SINGLE_ROOM, "singleRoom", DeviceCapability.SINGLE_ROOM_CLEANING),
+            new StateOptionEntry<CleanMode>(CleanMode.PAUSE, "pause"),
+            new StateOptionEntry<CleanMode>(CleanMode.STOP, "stop"),
+            new StateOptionEntry<CleanMode>(CleanMode.RETURNING, "returning"));
+
+    public static final StateOptionMapping<MoppingWaterAmount> WATER_AMOUNT_MAPPING = StateOptionMapping
+            .<MoppingWaterAmount> of(new StateOptionEntry<MoppingWaterAmount>(MoppingWaterAmount.LOW, "low"),
+                    new StateOptionEntry<MoppingWaterAmount>(MoppingWaterAmount.MEDIUM, "medium"),
+                    new StateOptionEntry<MoppingWaterAmount>(MoppingWaterAmount.HIGH, "high"),
+                    new StateOptionEntry<MoppingWaterAmount>(MoppingWaterAmount.VERY_HIGH, "veryhigh"));
+
+    public static final StateOptionMapping<SuctionPower> SUCTION_POWER_MAPPING = StateOptionMapping.<SuctionPower> of(
+            new StateOptionEntry<SuctionPower>(SuctionPower.SILENT, "silent",
+                    DeviceCapability.EXTENDED_CLEAN_SPEED_CONTROL),
+            new StateOptionEntry<SuctionPower>(SuctionPower.NORMAL, "normal"),
+            new StateOptionEntry<SuctionPower>(SuctionPower.HIGH, "high"), new StateOptionEntry<SuctionPower>(
+                    SuctionPower.HIGHER, "higher", DeviceCapability.EXTENDED_CLEAN_SPEED_CONTROL));
 }

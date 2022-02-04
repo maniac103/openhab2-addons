@@ -214,6 +214,7 @@ public final class EcovacsApiImpl implements EcovacsApi {
             } else {
                 result = desc;
             }
+            result.addImplicitCapabilities();
             return result;
         }).collect(Collectors.toList());
     }

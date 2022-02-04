@@ -44,4 +44,14 @@ public class DeviceDescription {
         return new DeviceDescription(modelName, deviceClass, null, other.protoVersion, other.usesMqtt,
                 other.capabilities);
     }
+
+    public void addImplicitCapabilities() {
+        if (protoVersion != ProtocolVersion.XML && capabilities.contains(DeviceCapability.CLEAN_SPEED_CONTROL)) {
+            capabilities.add(DeviceCapability.EXTENDED_CLEAN_SPEED_CONTROL);
+        }
+        if (!capabilities.contains(DeviceCapability.SPOT_AREA_CLEANING)) {
+            capabilities.add(DeviceCapability.EDGE_CLEANING);
+            capabilities.add(DeviceCapability.SPOT_CLEANING);
+        }
+    }
 }

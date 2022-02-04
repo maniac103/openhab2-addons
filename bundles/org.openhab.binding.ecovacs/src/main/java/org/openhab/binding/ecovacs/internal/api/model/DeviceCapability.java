@@ -40,5 +40,9 @@ public enum DeviceCapability {
     @SerializedName("auto_empty_station")
     AUTO_EMPTY_STATION,
     @SerializedName("read_network_info")
-    READ_NETWORK_INFO
+    READ_NETWORK_INFO,
+    // implicit capabilities added in code
+    EDGE_CLEANING,
+    SPOT_CLEANING,
+    EXTENDED_CLEAN_SPEED_CONTROL
 }
