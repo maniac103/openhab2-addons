@@ -93,7 +93,19 @@ Remarks:
 - [9] Only present if device has voice reporting
 - [10] Only present if device has a mopping system. Possible values include 'low', 'medium', 'high' and 'veryhigh'
 
-## Full Example
+## File Based Configuration
 
-TODO
+If you want to create the API bridge in a .things file, the entry has to look as follows:
+
+```
+Bridge ecovacs:ecovacsapi:ecovacsapi [ email="your.email@provider.com", password="yourpassword", continent="ww" ]
+```
+
+Then devices are detected automatically. If you also want to enter those manually, the syntax is as follows:
+```
+Bridge ecovacs:ecovacsapi:ecovacsapi [ email="your.email@provider.com", password="yourpassword", continent="ww" ]
+{
+    Thing vacuum myDeebot "Deebot Vacuum" [ serialNumber="serial as printed on label" ]
+}
+```
 
