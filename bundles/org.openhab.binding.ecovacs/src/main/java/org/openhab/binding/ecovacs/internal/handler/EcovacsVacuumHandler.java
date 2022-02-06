@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.ecovacs.internal;
+package org.openhab.binding.ecovacs.internal.handler;
 
 import static org.openhab.binding.ecovacs.internal.EcovacsBindingConstants.*;
 
@@ -24,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.EcovacsBindingConstants.StateOptionEntry;
+import org.openhab.binding.ecovacs.internal.EcovacsBindingConstants.StateOptionMapping;
+import org.openhab.binding.ecovacs.internal.EcovacsDynamicStateDescriptionProvider;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApi;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
@@ -56,6 +59,7 @@ import org.openhab.binding.ecovacs.internal.api.model.DeviceCapability;
 import org.openhab.binding.ecovacs.internal.api.model.MoppingWaterAmount;
 import org.openhab.binding.ecovacs.internal.api.model.NetworkInfo;
 import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
+import org.openhab.binding.ecovacs.internal.config.EcovacsVacuumConfiguration;
 import org.openhab.core.i18n.LocaleProvider;
 import org.openhab.core.i18n.TranslationProvider;
 import org.openhab.core.io.net.http.HttpUtil;
@@ -160,7 +164,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void initialize() {
-        final String serial = getConfigAs(EcovacsDeviceConfiguration.class).serialNumber;
+        final String serial = getConfigAs(EcovacsVacuumConfiguration.class).serialNumber;
         if (serial.isEmpty()) {
             logger.info("Thing {} is missing serial number information", getThing().getUID());
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR);
@@ -414,7 +418,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     private synchronized void scheduleNextPoll(long initialDelaySeconds) {
         cancelNextPoll();
 
-        final EcovacsDeviceConfiguration config = getConfigAs(EcovacsDeviceConfiguration.class);
+        final EcovacsVacuumConfiguration config = getConfigAs(EcovacsVacuumConfiguration.class);
         final long delayUntilNextPoll;
         if (initialDelaySeconds < 0) {
             long intervalSeconds = config.refresh * 60;

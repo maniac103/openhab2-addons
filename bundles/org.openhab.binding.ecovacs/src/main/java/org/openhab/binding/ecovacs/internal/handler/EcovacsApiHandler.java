@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.ecovacs.internal;
+package org.openhab.binding.ecovacs.internal.handler;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -22,6 +22,8 @@ import org.openhab.binding.ecovacs.internal.api.ClientKeys;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApi;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.util.MD5Util;
+import org.openhab.binding.ecovacs.internal.config.EcovacsApiConfiguration;
+import org.openhab.binding.ecovacs.internal.discovery.EcovacsDeviceDiscoveryService;
 import org.openhab.core.config.core.Configuration;
 import org.openhab.core.i18n.LocaleProvider;
 import org.openhab.core.io.net.http.HttpClientFactory;

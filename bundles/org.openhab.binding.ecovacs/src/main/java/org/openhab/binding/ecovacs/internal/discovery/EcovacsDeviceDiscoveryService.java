@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.ecovacs.internal;
+package org.openhab.binding.ecovacs.internal.discovery;
 
 import static org.openhab.binding.ecovacs.internal.EcovacsBindingConstants.*;
 
@@ -24,6 +24,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApi;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
+import org.openhab.binding.ecovacs.internal.handler.EcovacsApiHandler;
 import org.openhab.core.config.discovery.AbstractDiscoveryService;
 import org.openhab.core.config.discovery.DiscoveryResult;
 import org.openhab.core.config.discovery.DiscoveryResultBuilder;
@@ -95,7 +96,7 @@ public class EcovacsDeviceDiscoveryService extends AbstractDiscoveryService impl
     }
 
     @Override
-    protected synchronized void startScan() {
+    public synchronized void startScan() {
         Future<?> onDemandScanFuture = this.onDemandScanFuture;
         if (onDemandScanFuture != null && !onDemandScanFuture.isDone()) {
             logger.debug("Ecovacs device discovery scan already in progress");
