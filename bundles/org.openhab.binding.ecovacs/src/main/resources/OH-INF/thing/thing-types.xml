@@ -19,7 +19,6 @@
 			<channel-group id="total-stats" typeId="total-stats"/>
 			<channel-group id="consumables" typeId="consumables"/>
 			<channel-group id="settings" typeId="settings"/>
-			<!-- TODO: error, clean passes for spot, rooms for spot (with type?), dnd? -->
 		</channel-groups>
 
 		<config-description>
@@ -123,7 +122,7 @@
 		<state>
 			<options>
 				<option value="clean">Automatic cleaning</option>
-				<!-- TODO: support spot -->
+				<!-- TODO: support spot : 'spotArea:A,B,C:2x' -->
 				<option value="pause">Pause cleaning</option>
 				<option value="resume">Resume cleaning</option>
 				<option value="stop">Stop</option>

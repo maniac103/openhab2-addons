@@ -47,7 +47,7 @@ public class GetNetworkInfoCommand extends IotDeviceCommand<NetworkInfo> {
             return new NetworkInfo(resp.ip, resp.mac, resp.ssid, Integer.valueOf(resp.rssi));
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            Node ipAttr = XPathUtils.getFirstXPathMatch(payload, "//@wi"); // TODO: verify this
+            Node ipAttr = XPathUtils.getFirstXPathMatch(payload, "//@wi");
             Node ssidAttr = XPathUtils.getFirstXPathMatch(payload, "//@s");
             return new NetworkInfo(ipAttr.getNodeValue(), "", ssidAttr.getNodeValue(), 0);
         }

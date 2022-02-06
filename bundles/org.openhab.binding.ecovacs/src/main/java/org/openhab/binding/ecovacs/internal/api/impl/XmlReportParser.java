@@ -89,6 +89,5 @@ class XmlReportParser implements ReportParser {
                 listener.onWaterSystemPresentUpdated(device, WaterSystemInfo.parseWaterBoxInfo(payload));
                 break;
         }
-        // TODO: need to update water system info
     }
 }
