@@ -160,7 +160,14 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void initialize() {
-        logger.debug("{}: Initializing handler", getDeviceSerial());
+        final String serial = getConfigAs(EcovacsDeviceConfiguration.class).serialNumber;
+        if (serial.isEmpty()) {
+            logger.info("Thing {} is missing serial number information", getThing().getUID());
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR);
+            return;
+        }
+
+        logger.debug("{}: Initializing handler", serial);
         scheduler.execute(() -> {
             final Bridge bridge = getBridge();
             final EcovacsApiHandler handler = bridge != null ? (EcovacsApiHandler) bridge.getHandler() : null;
@@ -172,13 +179,15 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
             }
 
             try {
-                String serial = getDeviceSerial();
-                Optional<EcovacsDevice> device = api.getDevices().stream()
+                Optional<EcovacsDevice> deviceOpt = api.getDevices().stream()
                         .filter(d -> serial.equals(d.getSerialNumber())).findFirst();
-                if (device.isPresent()) {
-                    this.device = device.get();
-                    updateStateOptions(device.get());
-                    removeUnsupportedChannels(device.get());
+                if (deviceOpt.isPresent()) {
+                    EcovacsDevice device = deviceOpt.get();
+                    this.device = device;
+                    updateProperty(Thing.PROPERTY_MODEL_ID, device.getModelName());
+                    updateProperty(Thing.PROPERTY_SERIAL_NUMBER, device.getSerialNumber());
+                    updateStateOptions(device);
+                    removeUnsupportedChannels(device);
                     connectToDevice();
                 } else {
                     logger.info("{}: Device not found in device list, setting offline", serial);
@@ -609,6 +618,6 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     }
 
     private String getDeviceSerial() {
-        return getThing().getUID().getId();
+        return getThing().getProperties().getOrDefault(Thing.PROPERTY_SERIAL_NUMBER, "<unknown>");
     }
 }

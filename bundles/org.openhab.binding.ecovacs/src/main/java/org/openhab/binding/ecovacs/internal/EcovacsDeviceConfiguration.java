@@ -21,5 +21,6 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
  */
 @NonNullByDefault
 public class EcovacsDeviceConfiguration {
+    public String serialNumber = "";
     public int refresh = 5; // in minutes
 }
