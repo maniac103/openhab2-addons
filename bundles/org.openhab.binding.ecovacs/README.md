@@ -115,6 +115,7 @@ Bridge ecovacs:ecovacsapi:ecovacsapi [ email="your.email@provider.com", password
 ```
 
 Then devices are detected automatically. If you also want to enter those manually, the syntax is as follows:
+
 ```
 Bridge ecovacs:ecovacsapi:ecovacsapi [ email="your.email@provider.com", password="yourpassword", continent="ww" ]
 {
