@@ -266,6 +266,8 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         lastCleanMode = newMode;
         if (newMode.isActive()) {
             lastActiveCleanMode = newMode;
+        } else if (newMode == CleanMode.IDLE) {
+            lastActiveCleanMode = null;
         }
         updateStateAndCommandChannels();
         if (newMode == CleanMode.RETURNING) {
