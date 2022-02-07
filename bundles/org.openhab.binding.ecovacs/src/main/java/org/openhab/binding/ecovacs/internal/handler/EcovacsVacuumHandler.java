@@ -49,6 +49,7 @@ import org.openhab.binding.ecovacs.internal.api.commands.ResumeCleaningCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.SetMoppingWaterAmountCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.SetSuctionPowerCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.SetVolumeCommand;
+import org.openhab.binding.ecovacs.internal.api.commands.SpotAreaCleaningCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.StartAutoCleaningCommand;
 import org.openhab.binding.ecovacs.internal.api.commands.StopCleaningCommand;
 import org.openhab.binding.ecovacs.internal.api.model.ChargeMode;
@@ -599,6 +600,28 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
             case CMD_CHARGE:
                 return new GoChargingCommand();
         }
+
+        if (command.startsWith(CMD_SPOT_AREA) && device.hasCapability(DeviceCapability.SPOT_AREA_CLEANING)) {
+            String[] splitted = command.split(":");
+            if (splitted.length == 2 || splitted.length == 3) {
+                int passes = splitted.length == 3 && "x2".equals(splitted[2]) ? 2 : 1;
+                List<String> roomIds = new ArrayList<>();
+                for (String id : splitted[1].split(",")) {
+                    // We let the user pass in letters as in Ecovacs' app, but the API wants indices
+                    if (id.length() == 1 && id.charAt(0) >= 'A' && id.charAt(0) <= 'Z') {
+                        roomIds.add(String.valueOf(id.charAt(0) - 'A'));
+                    } else {
+                        logger.info("{}: Found invalid spot area room ID '{}', ignoring.", getDeviceSerial(), id);
+                    }
+                }
+                if (!roomIds.isEmpty()) {
+                    return new SpotAreaCleaningCommand(roomIds, passes);
+                }
+            } else {
+                logger.info("{}: spotArea command needs to have the form spotArea:<rooms>[:x2]", getDeviceSerial());
+            }
+        }
+
         return null;
     }
 

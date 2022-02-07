@@ -82,7 +82,7 @@ it is automatically removed from the given thing.
 
 Remarks:
 
-- [1] Possible actions include 'clean' (start auto cleaning), 'pause', 'stop' and 'charge' (go to charge station)
+- [1] See [section below](#command-channel-actions)
 - [2] Possible states: 'auto', 'edge', 'spot', 'spotArea', 'customArea', 'singleRoom', 'pause', 'stop', 'returning' and 'charging'
 - [3] Current cleaning status is only valid if the device is currently cleaning
 - [4] Only present if device has a mopping system
@@ -92,6 +92,19 @@ Remarks:
 - [8] Only present if device can control power level. Possible values vary by device: 'normal' and 'high' are always supported, 'silent' and 'higher' are supported for some models
 - [9] Only present if device has voice reporting
 - [10] Only present if device has a mopping system. Possible values include 'low', 'medium', 'high' and 'veryhigh'
+
+## Command Channel Actions
+
+The following actions are supported by the `command` channel:
+
+| Name       | Action                                    | Remarks                                              |
+|------------|-------------------------------------------|------------------------------------------------------|
+| `clean`    | Start cleaning in automatic mode.         |                                                      |
+| `spotArea` | Start cleaning specific rooms.            | <ul><li>Only if supported by device, which can be recognized by `spotArea` being present in the list of possible states of the `state` channel.</li><li>Format: `spotArea:<room IDs>`, where `room IDs` is a comma separated list of room letters as shown in Ecovacs' app, so a valid command could e.g. be `spotArea:A,D,E`.</li><li>If you want to run 2 clean passes, amend `:x2` to the command, e.g. `spotArea:A,C,B:x2`.</li></ul> |
+| `pause`    | Pause cleaning if it's currently active.  | If the device is idle, the command is ignored.       |
+| `resume`   | Resume cleaning if it's currently paused. | If the device is not paused, the command is ignored. |
+| `stop`     | Stop cleaning immediately.                |                                                      |
+| `charge`   | Send device to charging station.          |                                                      |
 
 ## File Based Configuration
 

@@ -122,7 +122,6 @@
 		<state>
 			<options>
 				<option value="clean">Automatic cleaning</option>
-				<!-- TODO: support spot : 'spotArea:A,B,C:2x' -->
 				<option value="pause">Pause cleaning</option>
 				<option value="resume">Resume cleaning</option>
 				<option value="stop">Stop</option>

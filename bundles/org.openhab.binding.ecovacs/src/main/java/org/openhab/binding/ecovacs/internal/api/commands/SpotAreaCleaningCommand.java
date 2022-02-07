@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
+import java.util.List;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
@@ -29,8 +31,8 @@ public class SpotAreaCleaningCommand extends AbstractNoResponseCommand {
     private final String content;
     private final int cleanPasses;
 
-    public SpotAreaCleaningCommand(String roomIds, int cleanPasses) {
-        this.content = roomIds;
+    public SpotAreaCleaningCommand(List<String> roomIds, int cleanPasses) {
+        this.content = String.join(",", roomIds);
         this.cleanPasses = cleanPasses;
     }
 
