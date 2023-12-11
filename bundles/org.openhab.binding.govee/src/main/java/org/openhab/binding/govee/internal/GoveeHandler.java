@@ -19,11 +19,6 @@ import static org.openhab.binding.govee.internal.GoveeBindingConstants.COLOR_TEM
 import static org.openhab.binding.govee.internal.GoveeBindingConstants.COLOR_TEMPERATURE_MIN_VALUE;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -38,7 +33,6 @@ import org.openhab.binding.govee.internal.model.GenericGoveeMsg;
 import org.openhab.binding.govee.internal.model.GenericGoveeRequest;
 import org.openhab.binding.govee.internal.model.StatusResponse;
 import org.openhab.binding.govee.internal.model.ValueIntData;
-import org.openhab.core.common.ThreadPoolManager;
 import org.openhab.core.library.types.HSBType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.PercentType;
@@ -56,6 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 /**
  * The {@link GoveeHandler} is responsible for handling commands, which are
@@ -90,19 +85,8 @@ public class GoveeHandler extends BaseThingHandler {
      */
     private static final Gson GSON = new Gson();
 
-    // Holds a list of all thing handlers to send them thing updates via the receiver-Thread
-    private static final Map<String, GoveeHandler> THING_HANDLERS = new HashMap<>();
-
     private final Logger logger = LoggerFactory.getLogger(GoveeHandler.class);
-    private static final int SENDTODEVICE_PORT = 4003;
-    public static final int RECEIVEFROMDEVICE_PORT = 4002;
 
-    // Semaphores to suppress further processing if already running
-    public static boolean refreshJobRunning = false;
-    private static boolean refreshRunning = false;
-
-    @Nullable
-    private static ScheduledFuture<?> refreshStatusJob; // device response receiver job
     @Nullable
     private ScheduledFuture<?> triggerStatusJob; // send device status update job
     private GoveeConfiguration goveeConfiguration = new GoveeConfiguration();
@@ -111,13 +95,6 @@ public class GoveeHandler extends BaseThingHandler {
     private int lastBrightness;
     private Color lastColor = new Color(0, 0, 0);
     private int lastColorTempInKelvin = COLOR_TEMPERATURE_MIN_VALUE.intValue();
-
-    /*
-     * Common Receiver job for the status answers of the devices
-     */
-    public static boolean isRefreshJobRunning() {
-        return refreshJobRunning && THING_HANDLERS.isEmpty();
-    }
 
     /**
      * This thing related job <i>thingRefreshSender</i> triggers an update to the Govee device.
@@ -141,51 +118,27 @@ public class GoveeHandler extends BaseThingHandler {
         super(thing);
     }
 
+    public String getHostname() {
+        return goveeConfiguration.hostname;
+    }
+
     @Override
     public void initialize() {
         goveeConfiguration = getConfigAs(GoveeConfiguration.class);
 
         final String ipAddress = goveeConfiguration.hostname;
-        if (!ipAddress.isEmpty()) {
-            THING_HANDLERS.put(ipAddress, this);
-        } else {
+        if (ipAddress.isEmpty()) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                     "@text/offline.configuration-error.ip-address.missing");
             return;
         }
-        if (!THING_HANDLERS.isEmpty()) {
-            startRefreshStatusJob();
-        }
-
         updateStatus(ThingStatus.UNKNOWN);
+        CommunicationManager.registerHandler(this);
         if (triggerStatusJob == null) {
             logger.debug("Starting refresh trigger job for thing {} ", thing.getLabel());
 
             triggerStatusJob = scheduler.scheduleWithFixedDelay(thingRefreshSender, 100,
                     goveeConfiguration.refreshInterval * 1000L, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    /**
-     * Stop the Refresh Status Job, so the same socket can be used for something else (like discovery)
-     */
-    public static void stopRefreshStatusJob() {
-        ScheduledFuture<?> refreshStatusJobFuture = refreshStatusJob;
-        if (refreshStatusJobFuture != null) {
-            refreshStatusJobFuture.cancel(true);
-            refreshStatusJob = null;
-        }
-
-        refreshJobRunning = false;
-    }
-
-    /**
-     * (re)start the refresh status job
-     */
-    public static synchronized void startRefreshStatusJob() {
-        if (refreshStatusJob == null) {
-            refreshStatusJob = ThreadPoolManager.getScheduledPool("goveeThingHandler")
-                    .scheduleWithFixedDelay(new RefreshStatusReceiver(), 100, 1000, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -198,13 +151,7 @@ public class GoveeHandler extends BaseThingHandler {
             triggerStatusJobFuture.cancel(true);
             triggerStatusJob = null;
         }
-        if (!goveeConfiguration.hostname.isEmpty()) {
-            THING_HANDLERS.remove(goveeConfiguration.hostname);
-        }
-
-        if (THING_HANDLERS.isEmpty()) {
-            stopRefreshStatusJob();
-        }
+        CommunicationManager.unregisterHandler(this);
     }
 
     @Override
@@ -267,45 +214,31 @@ public class GoveeHandler extends BaseThingHandler {
      *
      */
     private void triggerDeviceStatusRefresh() throws IOException {
-        if (refreshRunning) {
-            return;
-        }
-        if (GoveeDiscoveryService.isDiscoveryActive()) {
-            logger.debug("Not triggering refresh as Scan is currently active");
-            return;
-        }
-        refreshRunning = true;
-
         logger.debug("trigger Refresh Status of device {}", thing.getLabel());
-
-        try {
-            GenericGoveeRequest lightQuery = new GenericGoveeRequest(
-                    new GenericGoveeMsg("devStatus", new EmptyValueQueryStatusData()));
-            send(GSON.toJson(lightQuery));
-        } finally {
-            refreshRunning = false;
-        }
+        GenericGoveeRequest lightQuery = new GenericGoveeRequest(
+                new GenericGoveeMsg("devStatus", new EmptyValueQueryStatusData()));
+        CommunicationManager.sendRequest(this, lightQuery);
     }
 
     public void sendColor(Color color) throws IOException {
         lastColor = color;
         GenericGoveeRequest lightColor = new GenericGoveeRequest(
                 new GenericGoveeMsg("colorwc", new ColorData(color, 0)));
-        send(GSON.toJson(lightColor));
+        CommunicationManager.sendRequest(this, lightColor);
     }
 
     public void sendBrightness(int brightness) throws IOException {
         lastBrightness = brightness;
         GenericGoveeRequest lightBrightness = new GenericGoveeRequest(
                 new GenericGoveeMsg("brightness", new ValueIntData(brightness)));
-        send(GSON.toJson(lightBrightness));
+        CommunicationManager.sendRequest(this, lightBrightness);
     }
 
     private void sendOnOff(OnOffType switchValue) throws IOException {
         lastOnOff = (switchValue == OnOffType.ON) ? 1 : 0;
         GenericGoveeRequest switchLight = new GenericGoveeRequest(
                 new GenericGoveeMsg("turn", new ValueIntData(lastOnOff)));
-        send(GSON.toJson(switchLight));
+        CommunicationManager.sendRequest(this, switchLight);
     }
 
     private void sendColorTemp(int colorTemp) throws IOException {
@@ -313,20 +246,7 @@ public class GoveeHandler extends BaseThingHandler {
         logger.debug("sendColorTemp {}", colorTemp);
         GenericGoveeRequest lightColor = new GenericGoveeRequest(
                 new GenericGoveeMsg("colorwc", new ColorData(new Color(0, 0, 0), colorTemp)));
-        send(GSON.toJson(lightColor));
-    }
-
-    public void send(String message) throws IOException {
-        DatagramSocket socket;
-        socket = new DatagramSocket();
-        socket.setReuseAddress(true);
-        byte[] data = message.getBytes();
-
-        InetAddress address = InetAddress.getByName(goveeConfiguration.hostname);
-        logger.debug("Sending {} to {}", message, goveeConfiguration.hostname);
-        DatagramPacket packet = new DatagramPacket(data, data.length, address, SENDTODEVICE_PORT);
-        socket.send(packet);
-        socket.close();
+        CommunicationManager.sendRequest(this, lightColor);
     }
 
     /**
@@ -348,11 +268,25 @@ public class GoveeHandler extends BaseThingHandler {
         return hsbState;
     }
 
-    public void updateDeviceState(@Nullable StatusResponse message) {
-        if (message == null) {
+    void handleIncomingStatus(String response) {
+        if (response.isEmpty()) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                    "@text/offline.communication-error.empty-response");
             return;
         }
 
+        try {
+            StatusResponse statusMessage = GSON.fromJson(response, StatusResponse.class);
+            if (statusMessage != null) {
+                updateDeviceState(statusMessage);
+            }
+            updateStatus(ThingStatus.ONLINE);
+        } catch (JsonSyntaxException jse) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, jse.getMessage());
+        }
+    }
+
+    private void updateDeviceState(StatusResponse message) {
         logger.debug("Update Device State ----------------------------------------------");
         lastOnOff = message.msg().data().onOff();
         logger.debug("lastOnOff = {}", lastOnOff);
@@ -378,17 +312,5 @@ public class GoveeHandler extends BaseThingHandler {
         logger.debug("Updating Color-Temperature Status: {} K  {}%", lastColorTempInKelvin, lastColorTempInPercent);
         updateState(CHANNEL_COLOR_TEMPERATURE_ABS, new QuantityType<Temperature>(lastColorTempInKelvin, Units.KELVIN));
         updateState(CHANNEL_COLOR_TEMPERATURE, new PercentType(lastColorTempInPercent));
-    }
-
-    public void statusUpdate(ThingStatus status, ThingStatusDetail statusDetail, @Nullable String description) {
-        updateStatus(status, statusDetail, description);
-    }
-
-    public void statusUpdate(ThingStatus status) {
-        updateStatus(status);
-    }
-
-    public static synchronized Map<String, GoveeHandler> getThingHandlers() {
-        return THING_HANDLERS;
     }
 }
