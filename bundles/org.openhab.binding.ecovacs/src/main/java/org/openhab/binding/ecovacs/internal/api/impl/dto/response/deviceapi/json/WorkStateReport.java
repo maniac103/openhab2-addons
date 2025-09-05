@@ -30,7 +30,7 @@ public class WorkStateReport {
 
     public static class DeviceState {
         @SerializedName("trigger")
-        public String trigger; // app, workComplete, ...?
+        public String trigger; // app, workComplete, voice, ...?
         @SerializedName("state")
         public String state;
     }
