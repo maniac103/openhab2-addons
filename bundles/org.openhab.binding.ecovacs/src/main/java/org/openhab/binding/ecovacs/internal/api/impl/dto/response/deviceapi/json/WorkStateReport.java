@@ -48,6 +48,9 @@ public class WorkStateReport {
     }
 
     public CleanMode determineCleanMode(Gson gson) {
+        if (paused != 0) {
+            return CleanMode.PAUSE;
+        }
         final String modeValue;
         if ("cleaning".equals(robotState.state) && robotState.cleanState != null) {
             modeValue = robotState.cleanState.type;
