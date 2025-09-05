@@ -131,7 +131,7 @@ class JsonReportParser implements ReportParser {
             }
             case "workstate": {
                 WorkStateReport report = payloadAs(response, WorkStateReport.class);
-                CleanMode mode = report.determineCleanMode(gson);
+                CleanMode mode = report.determineCleanMode(gson, logger);
                 if (mode == null) {
                     throw new DataParsingException("Could not get clean mode from response " + payload);
                 }

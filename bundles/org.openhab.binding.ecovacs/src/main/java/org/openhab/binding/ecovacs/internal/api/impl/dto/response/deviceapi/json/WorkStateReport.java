@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json;
 
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
+import org.slf4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -47,7 +48,7 @@ public class WorkStateReport {
         public String type;
     }
 
-    public CleanMode determineCleanMode(Gson gson) {
+    public CleanMode determineCleanMode(Gson gson, Logger logger) {
         if (paused != 0) {
             return CleanMode.PAUSE;
         }
@@ -59,6 +60,9 @@ public class WorkStateReport {
         } else {
             modeValue = robotState.state;
         }
-        return gson.fromJson(modeValue, CleanMode.class);
+        CleanMode mode = gson.fromJson(modeValue, CleanMode.class);
+        logger.debug("WorkStateReport: robot state {}, station {}, clean {} -> mode {} -> {}", robotState.state,
+                stationState.state, robotState.cleanState != null ? robotState.cleanState.type : null, modeValue, mode);
+        return mode;
     }
 }
