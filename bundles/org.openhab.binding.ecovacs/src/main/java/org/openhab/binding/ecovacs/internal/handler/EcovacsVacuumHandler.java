@@ -296,6 +296,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
 
     @Override
     public void onChargingStateUpdated(EcovacsDevice device, boolean charging) {
+        logger.debug("{}: charging state updated to {}", serialNumber, charging);
         lastWasCharging = charging;
         updateStateAndCommandChannels();
     }
@@ -308,6 +309,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
         } else if (newMode.isIdle()) {
             lastActiveCleanMode = null;
         }
+        logger.debug("{}: cleaning mode updated to {}", serialNumber, newMode);
         updateStateAndCommandChannels();
         Optional<State> areaDefState = areaDefinition.map(def -> {
             if (newMode == CleanMode.SPOT_AREA) {
@@ -387,6 +389,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
             throws EcovacsApiException, InterruptedException {
         lastWasCharging = device.sendCommand(new GetChargeStateCommand()) == ChargeMode.CHARGING;
         CleanMode mode = device.sendCommand(new GetCleanStateCommand());
+        logger.debug("{}: initial mode {}, initial charging state {}", serialNumber, mode, lastWasCharging);
         if (mode.isActive()) {
             lastActiveCleanMode = mode;
         }
@@ -676,12 +679,15 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     private void updateStateAndCommandChannels() {
         Boolean charging = this.lastWasCharging;
         CleanMode cleanMode = this.lastCleanMode;
+        logger.debug("{}: update state, mode {}, charging {}", serialNumber, cleanMode, charging);
         if (charging == null || cleanMode == null) {
             return;
         }
         String commandState = determineCommandChannelValue(charging, cleanMode);
         String currentMode = determineCleaningModeChannelValue(cleanMode.isActive() ? cleanMode : lastActiveCleanMode);
-        updateState(CHANNEL_ID_STATE, StringType.valueOf(determineStateChannelValue(charging, cleanMode)));
+        String state = determineStateChannelValue(charging, cleanMode);
+        logger.debug("{}: update state channel to {}", serialNumber, state);
+        updateState(CHANNEL_ID_STATE, StringType.valueOf(state));
         updateState(CHANNEL_ID_CLEANING_MODE, stringToState(currentMode));
         updateState(CHANNEL_ID_COMMAND, stringToState(commandState));
     }
