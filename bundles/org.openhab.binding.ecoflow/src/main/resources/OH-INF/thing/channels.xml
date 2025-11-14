@@ -217,6 +217,69 @@
 		</channels>
 	</channel-group-type>
 
+	<channel-group-type id="stream-status">
+		<label>Status</label>
+		<channels>
+			<channel id="load-power" typeId="output-power">
+				<label>Load Power</label>
+			</channel>
+			<channel id="operating-mode" typeId="stream-operating-mode"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="stream-grid">
+		<label>Grid</label>
+		<channels>
+			<channel id="feed-enabled" typeId="feed-enabled"/>
+			<channel id="power" typeId="ac-input-power">
+				<label>Grid Input Power</label>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="stream-battery">
+		<label>Battery</label>
+		<channels>
+			<channel id="battery-level" typeId="system.battery-level"/>
+			<channel id="charge-limit" typeId="battery-charge-limit"/>
+			<channel id="discharge-limit" typeId="battery-discharge-limit"/>
+			<channel id="backup-reserve" typeId="battery-backup-reserve"/>
+			<channel id="charge-power" typeId="extra-battery-power">
+				<label>Battery Charge Power</label>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="stream-pv-input">
+		<label>Solar Input</label>
+		<channels>
+			<channel id="power" typeId="solar-power">
+				<label>PV Power</label>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="stream-ac-output-1ac">
+		<label>AC Output</label>
+		<channels>
+			<channel id="enabled" typeId="ac-enabled">
+				<label>AC Output Enabled</label>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="stream-ac-output-2ac">
+		<label>AC Outputs</label>
+		<channels>
+			<channel id="enabled" typeId="ac-enabled">
+				<label>AC Output 1 Enabled</label>
+			</channel>
+			<channel id="enabled2" typeId="ac-enabled">
+				<label>AC Output 2 Enabled</label>
+			</channel>
+		</channels>
+	</channel-group-type>
+
 	<channel-type id="input-power">
 		<item-type unitHint="W">Number:Power</item-type>
 		<label>Total Input Power</label>
@@ -282,6 +345,12 @@
 	<channel-type id="battery-discharge-limit">
 		<item-type>Dimmer</item-type>
 		<label>Battery Discharge Limit</label>
+		<state pattern="%d %%"/>
+	</channel-type>
+
+	<channel-type id="battery-backup-reserve">
+		<item-type>Dimmer</item-type>
+		<label>Battery Backup Reserve</label>
 		<state pattern="%d %%"/>
 	</channel-type>
 
@@ -564,4 +633,19 @@
 		<state readOnly="true"/>
 	</channel-type>
 
+	<channel-type id="feed-enabled">
+		<item-type>Switch</item-type>
+		<label>Grid Feed Enabled</label>
+	</channel-type>
+
+	<channel-type id="stream-operating-mode">
+		<item-type>String</item-type>
+		<label>Operating Mode</label>
+		<state>
+			<options>
+				<option value="self-powered">Self-powered</option>
+				<option value="ai-schedule">AI intelligent schedule</option>
+			</options>
+		</state>
+	</channel-type>
 </thing:thing-descriptions>
