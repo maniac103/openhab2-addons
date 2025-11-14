@@ -41,6 +41,8 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.openhab.binding.ecoflow.internal.api.dto.response.DataWrapper;
 import org.openhab.binding.ecoflow.internal.api.dto.response.DeviceListResponseEntry;
 import org.openhab.binding.ecoflow.internal.api.dto.response.MqttConnectionData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -53,6 +55,7 @@ import com.google.gson.reflect.TypeToken;
  */
 @NonNullByDefault
 public class EcoflowApi {
+    private final Logger logger = LoggerFactory.getLogger(EcoflowApi.class);
     private final HttpClient httpClient;
     private final String accessKey;
     private final String secretKey;
@@ -189,9 +192,11 @@ public class EcoflowApi {
         request.timeout(10, TimeUnit.SECONDS);
         try {
             ContentResponse response = request.send();
+            logger.trace("HTTP request for URL {} -> status {}", request.getURI(), response.getStatus());
             if (response.getStatus() != HttpStatus.OK_200) {
                 throw new EcoflowApiException(response);
             }
+            logger.trace("Got HTTP response {}", response.getContentAsString());
             return response;
         } catch (TimeoutException | ExecutionException e) {
             throw new EcoflowApiException(e);
