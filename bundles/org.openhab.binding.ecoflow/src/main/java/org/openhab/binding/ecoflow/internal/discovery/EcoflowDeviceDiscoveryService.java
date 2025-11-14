@@ -128,6 +128,9 @@ public class EcoflowDeviceDiscoveryService extends AbstractThingHandlerDiscovery
             case "DELTA 2" -> THING_TYPE_DELTA2;
             case "DELTA 2 Max" -> THING_TYPE_DELTA2MAX;
             case "PowerStream" -> THING_TYPE_POWERSTREAM;
+            case "STREAM AC" -> THING_TYPE_STREAM_AC;
+            case "STREAM Max" -> THING_TYPE_STREAM_MAX;
+            case "STREAM Pro", "STREAM AC Pro", "STREAM Ultra", "STREAM Ultra X" -> THING_TYPE_STREAM_PRO_ULTRA;
             default -> null;
         };
         if (thingTypeUID == null) {

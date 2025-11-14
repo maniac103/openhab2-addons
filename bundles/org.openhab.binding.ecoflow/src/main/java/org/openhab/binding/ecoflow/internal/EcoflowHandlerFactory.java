@@ -12,10 +12,7 @@
  */
 package org.openhab.binding.ecoflow.internal;
 
-import static org.openhab.binding.ecoflow.internal.EcoflowBindingConstants.THING_TYPE_API;
-import static org.openhab.binding.ecoflow.internal.EcoflowBindingConstants.THING_TYPE_DELTA2;
-import static org.openhab.binding.ecoflow.internal.EcoflowBindingConstants.THING_TYPE_DELTA2MAX;
-import static org.openhab.binding.ecoflow.internal.EcoflowBindingConstants.THING_TYPE_POWERSTREAM;
+import static org.openhab.binding.ecoflow.internal.EcoflowBindingConstants.*;
 
 import java.util.Set;
 
@@ -24,6 +21,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecoflow.internal.handler.Delta2Handler;
 import org.openhab.binding.ecoflow.internal.handler.EcoflowApiHandler;
 import org.openhab.binding.ecoflow.internal.handler.PowerStreamHandler;
+import org.openhab.binding.ecoflow.internal.handler.StreamHandler;
 import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
@@ -47,7 +45,8 @@ public class EcoflowHandlerFactory extends BaseThingHandlerFactory {
     private final HttpClientFactory httpClientFactory;
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_API, THING_TYPE_DELTA2,
-            THING_TYPE_DELTA2MAX, THING_TYPE_POWERSTREAM);
+            THING_TYPE_DELTA2MAX, THING_TYPE_POWERSTREAM, THING_TYPE_STREAM_AC, THING_TYPE_STREAM_MAX,
+            THING_TYPE_STREAM_PRO_ULTRA);
 
     @Activate
     public EcoflowHandlerFactory(final @Reference HttpClientFactory httpClientFactory) {
@@ -69,6 +68,12 @@ public class EcoflowHandlerFactory extends BaseThingHandlerFactory {
             return new Delta2Handler(thing, true);
         } else if (THING_TYPE_DELTA2.equals(thingTypeUID)) {
             return new Delta2Handler(thing, false);
+        } else if (THING_TYPE_STREAM_AC.equals(thingTypeUID)) {
+            return new StreamHandler(thing, 0);
+        } else if (THING_TYPE_STREAM_MAX.equals(thingTypeUID)) {
+            return new StreamHandler(thing, 1);
+        } else if (THING_TYPE_STREAM_PRO_ULTRA.equals(thingTypeUID)) {
+            return new StreamHandler(thing, 2);
         } else {
             return new PowerStreamHandler(thing);
         }

@@ -30,6 +30,9 @@ public class EcoflowBindingConstants {
     public static final ThingTypeUID THING_TYPE_DELTA2 = new ThingTypeUID(BINDING_ID, "delta2");
     public static final ThingTypeUID THING_TYPE_DELTA2MAX = new ThingTypeUID(BINDING_ID, "delta2-max");
     public static final ThingTypeUID THING_TYPE_POWERSTREAM = new ThingTypeUID(BINDING_ID, "powerstream");
+    public static final ThingTypeUID THING_TYPE_STREAM_AC = new ThingTypeUID(BINDING_ID, "stream-ac");
+    public static final ThingTypeUID THING_TYPE_STREAM_MAX = new ThingTypeUID(BINDING_ID, "stream-max");
+    public static final ThingTypeUID THING_TYPE_STREAM_PRO_ULTRA = new ThingTypeUID(BINDING_ID, "stream-pro");
 
     public class DeltaChannels {
         public static final String CHANNEL_ID_BATTERY_SOC = "status#battery-level";
@@ -116,5 +119,21 @@ public class EcoflowBindingConstants {
         public static final String CHANNEL_ID_PV2_IN_CURRENT = "pv2-input#current";
         public static final String CHANNEL_ID_PV2_IN_POWER = "pv2-input#power";
         public static final String CHANNEL_ID_PV2_MPPT_ACTIVE = "pv2-input#mppt-active";
+    }
+
+    // Stream channels
+    public class StreamChannels {
+        public static final String CHANNEL_ID_LOAD_POWER = "status#load-power";
+        public static final String CHANNEL_ID_OPERATING_MODE = "status#operating-mode";
+        public static final String CHANNEL_ID_GRID_FEED_ENABLED = "grid#feed-enabled";
+        public static final String CHANNEL_ID_GRID_POWER = "grid#power";
+        public static final String CHANNEL_ID_PV_IN_POWER = "solar-input#power";
+        public static final String CHANNEL_ID_BATTERY_SOC = "battery#battery-level";
+        public static final String CHANNEL_ID_BATTERY_CHARGE_LIMIT = "battery#charge-limit";
+        public static final String CHANNEL_ID_BATTERY_DISCHARGE_LIMIT = "battery#discharge-limit";
+        public static final String CHANNEL_ID_BATTERY_BACKUP_RESERVE = "battery#backup-reserve";
+        public static final String CHANNEL_ID_BATTERY_CHARGE_POWER = "battery#charge-power";
+        public static final String CHANNEL_ID_AC_OUTPUT1 = "ac-output#enabled";
+        public static final String CHANNEL_ID_AC_OUTPUT2 = "ac-output#enabled2";
     }
 }
