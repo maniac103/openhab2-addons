@@ -16,7 +16,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -75,7 +74,7 @@ public class GetCleanLogsCommand extends IotDeviceCommand<List<CleanLogRecord>> 
                 String duration = attrs.getNamedItem("l").getNodeValue();
 
                 result.add(new CleanLogRecord(Long.parseLong(startTime), Integer.parseInt(duration),
-                        Integer.parseInt(area), Optional.empty(), CleanMode.IDLE));
+                        Integer.parseInt(area), null, CleanMode.IDLE));
             }
             return result;
         } catch (ParserConfigurationException | SAXException | NumberFormatException | IOException e) {

@@ -15,6 +15,7 @@ package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.xml
 import java.util.Optional;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
 import org.openhab.binding.ecovacs.internal.api.model.SuctionPower;
 import org.openhab.binding.ecovacs.internal.api.util.DataParsingException;
@@ -30,13 +31,13 @@ import com.google.gson.Gson;
 public class CleaningInfo {
     public static class CleanStateInfo {
         public final CleanMode mode;
-        public final Optional<String> areaDefinition;
+        public final @Nullable String areaDefinition;
 
         CleanStateInfo(CleanMode mode) {
-            this(mode, Optional.empty());
+            this(mode, null);
         }
 
-        CleanStateInfo(CleanMode mode, Optional<String> areaDefinition) {
+        CleanStateInfo(CleanMode mode, @Nullable String areaDefinition) {
             this.mode = mode;
             this.areaDefinition = areaDefinition;
         }
@@ -55,10 +56,10 @@ public class CleaningInfo {
             if (parsedMode == CleanMode.SPOT_AREA) {
                 Optional<Node> pointOpt = XPathUtils.getFirstXPathMatchOpt(xml, "//clean/@p");
                 if (pointOpt.isPresent()) {
-                    return new CleanStateInfo(CleanMode.CUSTOM_AREA, pointOpt.map(n -> n.getNodeValue()));
+                    return new CleanStateInfo(CleanMode.CUSTOM_AREA, pointOpt.get().getNodeValue());
                 }
                 Optional<Node> midOpt = XPathUtils.getFirstXPathMatchOpt(xml, "//clean/@mid");
-                return new CleanStateInfo(CleanMode.SPOT_AREA, midOpt.map(n -> n.getNodeValue()));
+                return new CleanStateInfo(CleanMode.SPOT_AREA, midOpt.isPresent() ? midOpt.get().getNodeValue() : null);
             }
             if (parsedMode != null) {
                 return new CleanStateInfo(parsedMode);

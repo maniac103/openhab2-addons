@@ -66,7 +66,7 @@ class XmlReportParser implements ReportParser {
                     logger.debug("{}: Custom area cleaning stated with area definition {}", device.getSerialNumber(),
                             info.areaDefinition);
                 }
-                listener.onCleaningModeUpdated(device, info.mode, info.areaDefinition);
+                listener.onCleaningModeUpdated(device, info.mode, Optional.ofNullable(info.areaDefinition));
                 // Full report:
                 // <ctl td='CleanReport'><clean type='auto' speed='standard' st='s' rsn='a'/></ctl>
                 break;

@@ -16,10 +16,10 @@ import static org.openhab.binding.ecovacs.internal.EcovacsBindingConstants.*;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApi;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
 import org.openhab.binding.ecovacs.internal.api.EcovacsDevice;
@@ -47,7 +47,7 @@ public class EcovacsDeviceDiscoveryService extends AbstractThingHandlerDiscovery
     private final Logger logger = LoggerFactory.getLogger(EcovacsDeviceDiscoveryService.class);
 
     private static final int DISCOVER_TIMEOUT_SECONDS = 10;
-    private Optional<EcovacsApi> api = Optional.empty();
+    private @Nullable EcovacsApi api;
     private final SchedulerTask onDemandScanTask = new SchedulerTask(scheduler, logger, "OnDemandScan",
             this::scanForDevices);
     private final SchedulerTask backgroundScanTask = new SchedulerTask(scheduler, logger, "BackgroundScan",
@@ -75,7 +75,7 @@ public class EcovacsDeviceDiscoveryService extends AbstractThingHandlerDiscovery
     }
 
     public synchronized void startScanningWithApi(EcovacsApi api) {
-        this.api = Optional.of(api);
+        this.api = api;
         onDemandScanTask.cancel();
         startScan();
     }
@@ -94,29 +94,32 @@ public class EcovacsDeviceDiscoveryService extends AbstractThingHandlerDiscovery
     }
 
     private void scanForDevices() {
-        this.api.ifPresent(api -> {
-            Instant timestampOfLastScan = getTimestampOfLastScan();
-            try {
-                List<EcovacsDevice> devices = api.getDevices();
-                logger.debug("Ecovacs discovery found {} devices", devices.size());
+        @Nullable
+        EcovacsApi api = this.api;
+        if (api == null) {
+            return;
+        }
+        Instant timestampOfLastScan = getTimestampOfLastScan();
+        try {
+            List<EcovacsDevice> devices = api.getDevices();
+            logger.debug("Ecovacs discovery found {} devices", devices.size());
 
-                for (EcovacsDevice device : devices) {
-                    deviceDiscovered(device);
-                }
-                for (Thing thing : thingHandler.getThing().getThings()) {
-                    String serial = thing.getUID().getId();
-                    if (!devices.stream().anyMatch(d -> serial.equals(d.getSerialNumber()))) {
-                        thingRemoved(thing.getUID());
-                    }
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } catch (EcovacsApiException e) {
-                logger.debug("Could not retrieve devices from Ecovacs API", e);
-            } finally {
-                removeOlderResults(timestampOfLastScan);
+            for (EcovacsDevice device : devices) {
+                deviceDiscovered(device);
             }
-        });
+            for (Thing thing : thingHandler.getThing().getThings()) {
+                String serial = thing.getUID().getId();
+                if (!devices.stream().anyMatch(d -> serial.equals(d.getSerialNumber()))) {
+                    thingRemoved(thing.getUID());
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (EcovacsApiException e) {
+            logger.debug("Could not retrieve devices from Ecovacs API", e);
+        } finally {
+            removeOlderResults(timestampOfLastScan);
+        }
     }
 
     private void deviceDiscovered(EcovacsDevice device) {

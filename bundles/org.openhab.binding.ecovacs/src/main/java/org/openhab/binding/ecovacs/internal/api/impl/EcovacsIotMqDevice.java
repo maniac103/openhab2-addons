@@ -108,7 +108,7 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
                     ? api.fetchCleanResultsLog(device)
                     : api.fetchCleanLogs(device);
             logEntries = log.stream().map(record -> new CleanLogRecord(record.timestamp, record.duration, record.area,
-                    Optional.ofNullable(record.imageUrl), record.type));
+                    record.imageUrl, record.type));
         }
         return logEntries.sorted((lhs, rhs) -> rhs.timestamp.compareTo(lhs.timestamp)).collect(Collectors.toList());
     }
@@ -116,11 +116,12 @@ public class EcovacsIotMqDevice implements EcovacsDevice {
     @Override
     public Optional<byte[]> downloadCleanMapImage(CleanLogRecord record)
             throws EcovacsApiException, InterruptedException {
-        if (record.mapImageUrl.isEmpty()) {
+        String mapImageUrl = record.mapImageUrl;
+        if (mapImageUrl == null) {
             return Optional.empty();
         }
         boolean needsSigning = hasCapability(DeviceCapability.USES_CLEAN_RESULTS_LOG_API);
-        return api.downloadCleanMapImage(device, record.mapImageUrl.get(), needsSigning);
+        return api.downloadCleanMapImage(device, mapImageUrl, needsSigning);
     }
 
     @Override

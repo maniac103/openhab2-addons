@@ -31,12 +31,12 @@ import com.google.gson.JsonObject;
 abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
     private final String xmlAction;
     private final String jsonAction;
-    private final Optional<CleanMode> mode;
+    private final @Nullable CleanMode mode;
 
     protected AbstractCleaningCommand(String xmlAction, String jsonAction, @Nullable CleanMode mode) {
         this.xmlAction = xmlAction;
         this.jsonAction = jsonAction;
-        this.mode = Optional.ofNullable(mode);
+        this.mode = mode;
     }
 
     @Override
@@ -78,25 +78,17 @@ abstract class AbstractCleaningCommand extends AbstractNoResponseCommand {
     }
 
     private Optional<String> getCleanModeProperty(ProtocolVersion version) {
-        return mode.flatMap(m -> {
-            switch (m) {
-                case AUTO:
-                    return Optional.of("auto");
-                case CUSTOM_AREA:
-                    return Optional.of(version == ProtocolVersion.XML ? "CustomArea" : "customArea");
-                case EDGE:
-                    return Optional.of("border");
-                case SPOT:
-                    return Optional.of("spot");
-                case SPOT_AREA:
-                    return Optional.of(version == ProtocolVersion.XML ? "SpotArea" : "spotArea");
-                case SINGLE_ROOM:
-                    return Optional.of("singleRoom");
-                case STOP:
-                    return Optional.of("stop");
-                default:
-                    return Optional.empty();
-            }
-        });
+        final @Nullable String modeValue = switch (mode) {
+            case null -> null;
+            case AUTO -> "auto";
+            case CUSTOM_AREA -> version == ProtocolVersion.XML ? "CustomArea" : "customArea";
+            case EDGE -> "border";
+            case SPOT -> "spot";
+            case SPOT_AREA -> version == ProtocolVersion.XML ? "SpotArea" : "spotArea";
+            case SINGLE_ROOM -> "singleRoom";
+            case STOP -> "stop";
+            default -> null;
+        };
+        return Optional.ofNullable(modeValue);
     }
 }

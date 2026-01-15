@@ -15,11 +15,11 @@ package org.openhab.binding.ecovacs.internal.handler;
 import static org.openhab.binding.ecovacs.internal.EcovacsBindingConstants.*;
 
 import java.util.Collection;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApi;
 import org.openhab.binding.ecovacs.internal.api.EcovacsApiException;
@@ -50,7 +50,7 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
     private final Logger logger = LoggerFactory.getLogger(EcovacsApiHandler.class);
     private static final long RETRY_INTERVAL_SECONDS = 120;
 
-    private Optional<EcovacsDeviceDiscoveryService> discoveryService = Optional.empty();
+    private @Nullable EcovacsDeviceDiscoveryService discoveryService;
     private SchedulerTask loginTask;
     private final HttpClient httpClient;
     private final LocaleProvider localeProvider;
@@ -63,7 +63,7 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
     }
 
     public void setDiscoveryService(EcovacsDeviceDiscoveryService discoveryService) {
-        this.discoveryService = Optional.of(discoveryService);
+        this.discoveryService = discoveryService;
     }
 
     public EcovacsApi createApiForDevice(String serial) throws ConfigurationException {
@@ -91,7 +91,10 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
     @Override
     public void dispose() {
         super.dispose();
-        discoveryService.ifPresent(ds -> ds.stopScan());
+        EcovacsDeviceDiscoveryService discoveryService = this.discoveryService;
+        if (discoveryService != null) {
+            discoveryService.stopScan();
+        }
     }
 
     @Override
@@ -138,7 +141,11 @@ public class EcovacsApiHandler extends BaseBridgeHandler {
             EcovacsApi api = createApi("", country);
             api.loginAndGetAccessToken();
             updateStatus(ThingStatus.ONLINE);
-            discoveryService.ifPresent(ds -> ds.startScanningWithApi(api));
+
+            EcovacsDeviceDiscoveryService discoveryService = this.discoveryService;
+            if (discoveryService != null) {
+                discoveryService.startScanningWithApi(api);
+            }
 
             logger.debug("Ecovacs API initialized");
         } catch (InterruptedException e) {

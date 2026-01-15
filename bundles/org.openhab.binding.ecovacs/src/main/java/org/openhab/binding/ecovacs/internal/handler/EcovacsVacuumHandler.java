@@ -134,7 +134,7 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
     private @Nullable Boolean lastWasCharging;
     private @Nullable CleanMode lastCleanMode;
     private @Nullable CleanMode lastActiveCleanMode;
-    private Optional<String> lastDownloadedCleanMapUrl = Optional.empty();
+    private @Nullable String lastDownloadedCleanMapUrl;
     private long lastSuccessfulPollTimestamp;
     private int lastDefaultCleaningPasses = 1;
     private String serialNumber = "<unset>";
@@ -496,7 +496,11 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                 // apply supplied filter
                 .filter(mv -> filter == null || filter.test(mv))
                 // apply capability filter
-                .filter(mv -> mv.capability.isEmpty() || device.hasCapability(mv.capability.get()))
+                .filter(mv -> {
+                    @Nullable
+                    DeviceCapability cap = mv.capability;
+                    return cap == null || device.hasCapability(cap);
+                })
                 // map to actual option
                 .map(mv -> new StateOption(mv.value, mv.value)).collect(Collectors.toList());
     }
@@ -608,13 +612,16 @@ public class EcovacsVacuumHandler extends BaseThingHandler implements EcovacsDev
                     StateOptionEntry<CleanMode> mode = CLEAN_MODE_MAPPING.get(record.mode);
                     updateState(CHANNEL_ID_LAST_CLEAN_MODE, stringToState(mode != null ? mode.value : null));
 
-                    if (device.hasCapability(DeviceCapability.MAPPING)
-                            && !lastDownloadedCleanMapUrl.equals(record.mapImageUrl)) {
-                        Optional<State> content = device.downloadCleanMapImage(record).map(bytes -> {
-                            lastDownloadedCleanMapUrl = record.mapImageUrl;
-                            return new RawType(bytes, "image/png");
-                        });
-                        updateState(CHANNEL_ID_LAST_CLEAN_MAP, Objects.requireNonNull(content.orElse(UnDefType.NULL)));
+                    if (device.hasCapability(DeviceCapability.MAPPING)) {
+                        String lastCleanMapUrl = this.lastDownloadedCleanMapUrl;
+                        if (lastCleanMapUrl != null && !lastCleanMapUrl.equals(record.mapImageUrl)) {
+                            Optional<State> content = device.downloadCleanMapImage(record).map(bytes -> {
+                                lastDownloadedCleanMapUrl = record.mapImageUrl;
+                                return new RawType(bytes, "image/png");
+                            });
+                            updateState(CHANNEL_ID_LAST_CLEAN_MAP,
+                                    Objects.requireNonNull(content.orElse(UnDefType.NULL)));
+                        }
                     }
                 }
             }
