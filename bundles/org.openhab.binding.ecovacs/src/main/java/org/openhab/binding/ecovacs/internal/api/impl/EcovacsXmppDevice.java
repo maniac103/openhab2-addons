@@ -466,6 +466,8 @@ public class EcovacsXmppDevice implements EcovacsDevice {
                             break outerloop;
                         }
                         break;
+                    default:
+                        break;
                 }
             }
 
