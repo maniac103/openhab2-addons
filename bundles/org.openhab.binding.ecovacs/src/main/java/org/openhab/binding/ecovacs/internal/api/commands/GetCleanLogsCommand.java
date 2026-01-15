@@ -78,7 +78,7 @@ public class GetCleanLogsCommand extends IotDeviceCommand<List<CleanLogRecord>> 
                         Integer.parseInt(area), Optional.empty(), CleanMode.IDLE));
             }
             return result;
-        } catch (ParserConfigurationException | SAXException | IOException e) {
+        } catch (ParserConfigurationException | SAXException | NumberFormatException | IOException e) {
             throw new DataParsingException(e);
         }
     }

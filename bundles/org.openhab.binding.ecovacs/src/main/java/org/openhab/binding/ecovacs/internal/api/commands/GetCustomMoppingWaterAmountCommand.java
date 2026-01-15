@@ -39,6 +39,9 @@ public class GetCustomMoppingWaterAmountCommand extends IotDeviceCommand<Integer
             throws DataParsingException {
         PortalIotCommandJsonResponse jsonResponse = (PortalIotCommandJsonResponse) response;
         WaterInfoReport resp = jsonResponse.getResponsePayloadAs(gson, WaterInfoReport.class);
+        if (resp.customWaterAmount == null) {
+            throw new DataParsingException("Response does not contain custom water amount");
+        }
         return resp.customWaterAmount;
     }
 }

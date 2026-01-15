@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.model;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecovacs.internal.api.util.DataParsingException;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -28,7 +29,7 @@ public enum SuctionPower {
     HIGHER,
     SILENT;
 
-    public static SuctionPower fromJsonValue(int value) {
+    public static SuctionPower fromJsonValue(int value) throws DataParsingException {
         switch (value) {
             case 1000:
                 return SILENT;
@@ -36,8 +37,10 @@ public enum SuctionPower {
                 return HIGH;
             case 2:
                 return HIGHER;
-            default:
+            case 0:
                 return NORMAL;
+            default:
+                throw new DataParsingException("Unexpected suction power value " + value);
         }
     }
 

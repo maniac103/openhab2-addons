@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json;
 
 import org.openhab.binding.ecovacs.internal.api.model.CleanMode;
+import org.openhab.binding.ecovacs.internal.api.util.DataParsingException;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -44,7 +45,7 @@ public class CleanReportV2 {
         public String areaDefinition;
     }
 
-    public CleanMode determineCleanMode(Gson gson) {
+    public CleanMode determineCleanMode(Gson gson) throws DataParsingException {
         final String modeValue;
         if ("clean".equals(state) && cleanState != null) {
             if ("working".equals(cleanState.motionState)) {

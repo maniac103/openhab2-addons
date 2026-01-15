@@ -13,18 +13,19 @@
 package org.openhab.binding.ecovacs.internal.api.model;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 
 /**
  * @author Danny Baumann - Initial contribution
  */
 @NonNullByDefault
 public class NetworkInfo {
-    public final String ipAddress;
-    public final String macAddress;
-    public final String wifiSsid;
+    public final @Nullable String ipAddress;
+    public final @Nullable String macAddress;
+    public final @Nullable String wifiSsid;
     public final int wifiRssi;
 
-    public NetworkInfo(String ip, String mac, String ssid, int rssi) {
+    public NetworkInfo(@Nullable String ip, @Nullable String mac, @Nullable String ssid, int rssi) {
         this.ipAddress = ip;
         this.macAddress = mac;
         this.wifiSsid = ssid;

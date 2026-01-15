@@ -12,6 +12,9 @@
  */
 package org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal;
 
+import org.eclipse.jdt.annotation.NonNull;
+import org.openhab.binding.ecovacs.internal.api.util.DataParsingException;
+
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -26,7 +29,15 @@ public class PortalIotCommandXmlResponse extends AbstractPortalIotCommandRespons
         this.responseXml = responseXml;
     }
 
-    public String getResponsePayloadXml() {
+    public String getNullableResponsePayloadXml() {
         return responseXml != null ? responseXml.replaceAll("\n|\r", "") : null;
+    }
+
+    public @NonNull String getResponsePayloadXml() throws DataParsingException {
+        String xml = getNullableResponsePayloadXml();
+        if (xml == null) {
+            throw new DataParsingException("XML payload is missing");
+        }
+        return xml;
     }
 }

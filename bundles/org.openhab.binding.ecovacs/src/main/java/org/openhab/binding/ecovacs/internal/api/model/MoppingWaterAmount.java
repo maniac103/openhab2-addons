@@ -13,6 +13,8 @@
 package org.openhab.binding.ecovacs.internal.api.model;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.ecovacs.internal.api.util.DataParsingException;
 
 /**
  * @author Danny Baumann - Initial contribution
@@ -24,7 +26,11 @@ public enum MoppingWaterAmount {
     HIGH,
     VERY_HIGH;
 
-    public static MoppingWaterAmount fromApiValue(int value) {
+    public static MoppingWaterAmount fromApiValue(@Nullable Integer value) throws DataParsingException {
+        if (value == null || value >= MoppingWaterAmount.values().length) {
+            throw new DataParsingException("Unexpected water amount enum value " + value);
+        }
+
         return MoppingWaterAmount.values()[value - 1];
     }
 

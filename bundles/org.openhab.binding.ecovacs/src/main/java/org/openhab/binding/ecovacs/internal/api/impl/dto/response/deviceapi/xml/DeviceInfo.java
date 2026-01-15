@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.model.ChargeMode;
 import org.openhab.binding.ecovacs.internal.api.util.DataParsingException;
 import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
@@ -32,11 +33,17 @@ public class DeviceInfo {
 
     public static int parseBatteryInfo(String xml) throws DataParsingException {
         Node batteryAttr = XPathUtils.getFirstXPathMatch(xml, "//battery/@power");
-        return Integer.valueOf(batteryAttr.getNodeValue());
+        try {
+            return Integer.valueOf(batteryAttr.getNodeValue());
+        } catch (NumberFormatException e) {
+            throw new DataParsingException(e);
+        }
     }
 
     public static ChargeMode parseChargeInfo(String xml, Gson gson) throws DataParsingException {
+        @Nullable
         String modeString = XPathUtils.getFirstXPathMatch(xml, "//charge/@type").getNodeValue();
+        @Nullable
         ChargeMode mode = gson.fromJson(modeString, ChargeMode.class);
         if (mode == null) {
             throw new IllegalArgumentException("Could not parse charge mode " + modeString);
@@ -87,7 +94,7 @@ public class DeviceInfo {
     private static Optional<Integer> nodeValueToInt(String xml, String attrName) throws DataParsingException {
         try {
             return XPathUtils.getFirstXPathMatchOpt(xml, "//ctl/@" + attrName)
-                    .map(n -> Integer.valueOf(n.getNodeValue()));
+                    .flatMap(n -> Optional.ofNullable(n.getNodeValue())).map(value -> Integer.valueOf(value));
         } catch (NumberFormatException e) {
             throw new DataParsingException(e);
         }

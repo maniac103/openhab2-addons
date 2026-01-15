@@ -14,12 +14,14 @@ package org.openhab.binding.ecovacs.internal.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.MapSetReport;
+import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.MapSetReport.MapSubSetInfo;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandJsonResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
@@ -27,6 +29,7 @@ import org.openhab.binding.ecovacs.internal.api.util.DataParsingException;
 import org.openhab.binding.ecovacs.internal.api.util.XPathUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.google.gson.Gson;
@@ -67,13 +70,22 @@ public class GetMapSpotAreasWithMapIdCommand extends IotDeviceCommand<List<Strin
             throws DataParsingException {
         if (response instanceof PortalIotCommandJsonResponse jsonResponse) {
             MapSetReport resp = jsonResponse.getResponsePayloadAs(gson, MapSetReport.class);
-            return resp.subsets.stream().map(i -> i.id).collect(Collectors.toList());
+            final @Nullable List<@Nullable MapSubSetInfo> subsets = resp.subsets;
+            if (subsets == null) {
+                throw new DataParsingException("Map response does not contain subsets");
+            }
+            return subsets.stream().filter(Objects::nonNull).map(i -> i.id).filter(Objects::nonNull)
+                    .collect(Collectors.toList());
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
             NodeList mapIds = XPathUtils.getXPathMatches(payload, "//m/@mid");
             List<String> result = new ArrayList<>();
             for (int i = 0; i < mapIds.getLength(); i++) {
-                result.add(mapIds.item(i).getNodeValue());
+                Node idNode = mapIds.item(i);
+                String value = idNode != null ? idNode.getNodeValue() : null;
+                if (value != null) {
+                    result.add(value);
+                }
             }
             return result;
         }

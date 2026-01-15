@@ -13,6 +13,7 @@
 package org.openhab.binding.ecovacs.internal.api.commands;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.PortalIotCommandXmlResponse;
@@ -48,6 +49,11 @@ public class GetFirmwareVersionCommand extends IotDeviceCommand<String> {
     public String convertResponse(AbstractPortalIotCommandResponse response, ProtocolVersion version, Gson gson)
             throws DataParsingException {
         String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-        return XPathUtils.getFirstXPathMatch(payload, "//ver[@name='FW']").getTextContent();
+        @Nullable
+        String fwVersion = XPathUtils.getFirstXPathMatch(payload, "//ver[@name='FW']").getTextContent();
+        if (fwVersion == null) {
+            throw new DataParsingException("Response does not contain firmware version");
+        }
+        return fwVersion;
     }
 }

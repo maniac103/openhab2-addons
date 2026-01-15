@@ -294,7 +294,7 @@ public final class EcovacsApiImpl implements EcovacsApi {
         if (desc.protoVersion == ProtocolVersion.XML) {
             commandResponse = handleResponse(response, PortalIotCommandXmlResponse.class);
             logger.trace("{}: Got response payload {}", device.getName(),
-                    ((PortalIotCommandXmlResponse) commandResponse).getResponsePayloadXml());
+                    ((PortalIotCommandXmlResponse) commandResponse).getNullableResponsePayloadXml());
         } else {
             commandResponse = handleResponse(response, PortalIotCommandJsonResponse.class);
             logger.trace("{}: Got response payload {}", device.getName(),

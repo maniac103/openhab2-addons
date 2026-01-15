@@ -12,9 +12,10 @@
  */
 package org.openhab.binding.ecovacs.internal.api.commands;
 
-import java.util.Objects;
+import java.util.Optional;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.ecovacs.internal.api.impl.ProtocolVersion;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.deviceapi.json.CachedMapInfoReport;
 import org.openhab.binding.ecovacs.internal.api.impl.dto.response.portal.AbstractPortalIotCommandResponse;
@@ -43,11 +44,23 @@ public class GetActiveMapIdCommand extends IotDeviceCommand<String> {
             throws DataParsingException {
         if (response instanceof PortalIotCommandJsonResponse jsonResponse) {
             CachedMapInfoReport resp = jsonResponse.getResponsePayloadAs(gson, CachedMapInfoReport.class);
-            return Objects.requireNonNull(
-                    resp.mapInfos.stream().filter(i -> i.used != 0).map(i -> i.mapId).findFirst().orElse(""));
+            if (resp.mapInfos == null) {
+                throw new DataParsingException("Map infos missing in response " + response);
+            }
+            Optional<String> mapIdOpt = resp.mapInfos.stream() //
+                    .filter(i -> i != null && i.used != 0) //
+                    .findFirst() //
+                    .flatMap(i -> Optional.ofNullable(i.mapId)); // map ID might be null as well
+
+            return mapIdOpt.orElseThrow(() -> new DataParsingException("No active map ID in response " + response));
         } else {
             String payload = ((PortalIotCommandXmlResponse) response).getResponsePayloadXml();
-            return XPathUtils.getFirstXPathMatch(payload, "//@i").getNodeValue();
+            @Nullable
+            String id = XPathUtils.getFirstXPathMatch(payload, "//@i").getNodeValue();
+            if (id == null) {
+                throw new DataParsingException("No ID in response " + payload);
+            }
+            return id;
         }
     }
 }
