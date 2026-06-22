@@ -16,6 +16,7 @@ import static org.openhab.binding.ecoflow.internal.EcoflowBindingConstants.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -48,6 +49,15 @@ public class EcoflowDeviceDiscoveryService extends AbstractThingHandlerDiscovery
     private final Logger logger = LoggerFactory.getLogger(EcoflowDeviceDiscoveryService.class);
 
     private static final int DISCOVER_TIMEOUT_SECONDS = 10;
+
+    private static final Map<String, ThingTypeUID> PRODUCT_NAME_TO_THING_TYPE = Map.ofEntries(
+            Map.entry("DELTA 2", THING_TYPE_DELTA2), Map.entry("DELTA 2 Max", THING_TYPE_DELTA2MAX),
+            Map.entry("PowerStream", THING_TYPE_POWERSTREAM), Map.entry("STREAM AC", THING_TYPE_STREAM_AC),
+            Map.entry("STREAM Max", THING_TYPE_STREAM_MAX), Map.entry("STREAM Pro", THING_TYPE_STREAM_PRO_ULTRA),
+            Map.entry("STREAM AC Pro", THING_TYPE_STREAM_PRO_ULTRA),
+            Map.entry("STREAM Ultra", THING_TYPE_STREAM_PRO_ULTRA),
+            Map.entry("STREAM Ultra X", THING_TYPE_STREAM_PRO_ULTRA));
+
     private Optional<EcoflowApi> api = Optional.empty();
     private final SchedulerTask onDemandScanTask = new SchedulerTask(scheduler, logger, "OnDemandScan",
             this::scanForDevices);
@@ -124,19 +134,19 @@ public class EcoflowDeviceDiscoveryService extends AbstractThingHandlerDiscovery
     }
 
     private void deviceDiscovered(DeviceListResponseEntry device) {
-        ThingTypeUID thingTypeUID = switch (device.productName) {
-            case "DELTA 2" -> THING_TYPE_DELTA2;
-            case "DELTA 2 Max" -> THING_TYPE_DELTA2MAX;
-            case "PowerStream" -> THING_TYPE_POWERSTREAM;
-            case "STREAM AC" -> THING_TYPE_STREAM_AC;
-            case "STREAM Max" -> THING_TYPE_STREAM_MAX;
-            case "STREAM Pro", "STREAM AC Pro", "STREAM Ultra", "STREAM Ultra X" -> THING_TYPE_STREAM_PRO_ULTRA;
-            default -> null;
-        };
+        Optional<String> productName = Optional.ofNullable(device.productName);
+        if (productName.isEmpty()) {
+            productName = PRODUCT_NAME_TO_THING_TYPE.keySet().stream().filter(pn -> device.deviceName.startsWith(pn))
+                    .findFirst();
+        }
+
+        ThingTypeUID thingTypeUID = productName.map(PRODUCT_NAME_TO_THING_TYPE::get).orElse(null);
         if (thingTypeUID == null) {
-            logger.debug("Found device {} with unhandled product type {}", device.serialNumber, device.productName);
+            logger.debug("Found device {} named {} with unhandled product type {}", device.serialNumber,
+                    device.deviceName, device.productName);
             return;
         }
+
         ThingUID thingUID = new ThingUID(thingTypeUID, thingHandler.getThing().getUID(), device.serialNumber);
         DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID)
                 .withBridge(thingHandler.getThing().getUID()).withLabel(device.deviceName)
