@@ -22,6 +22,7 @@ import org.openhab.binding.ecoflow.internal.handler.Delta2Handler;
 import org.openhab.binding.ecoflow.internal.handler.EcoflowApiHandler;
 import org.openhab.binding.ecoflow.internal.handler.PowerStreamHandler;
 import org.openhab.binding.ecoflow.internal.handler.StreamHandler;
+import org.openhab.binding.ecoflow.internal.handler.StreamMicroInverterHandler;
 import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
@@ -74,6 +75,8 @@ public class EcoflowHandlerFactory extends BaseThingHandlerFactory {
             return new StreamHandler(thing, 1);
         } else if (THING_TYPE_STREAM_PRO_ULTRA.equals(thingTypeUID)) {
             return new StreamHandler(thing, 2);
+        } else if (THING_TYPE_STREAM_MICROINVERTER.equals(thingTypeUID)) {
+            return new StreamMicroInverterHandler(thing);
         } else {
             return new PowerStreamHandler(thing);
         }

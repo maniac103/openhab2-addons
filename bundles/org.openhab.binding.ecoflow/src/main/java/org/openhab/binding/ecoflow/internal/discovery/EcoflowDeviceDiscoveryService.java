@@ -52,8 +52,10 @@ public class EcoflowDeviceDiscoveryService extends AbstractThingHandlerDiscovery
 
     private static final Map<String, ThingTypeUID> PRODUCT_NAME_TO_THING_TYPE = Map.ofEntries(
             Map.entry("DELTA 2", THING_TYPE_DELTA2), Map.entry("DELTA 2 Max", THING_TYPE_DELTA2MAX),
-            Map.entry("PowerStream", THING_TYPE_POWERSTREAM), Map.entry("STREAM AC", THING_TYPE_STREAM_AC),
-            Map.entry("STREAM Max", THING_TYPE_STREAM_MAX), Map.entry("STREAM Pro", THING_TYPE_STREAM_PRO_ULTRA),
+            Map.entry("PowerStream", THING_TYPE_POWERSTREAM),
+            Map.entry("STREAM Microinverter", THING_TYPE_STREAM_MICROINVERTER),
+            Map.entry("STREAM AC", THING_TYPE_STREAM_AC), Map.entry("STREAM Max", THING_TYPE_STREAM_MAX),
+            Map.entry("STREAM Pro", THING_TYPE_STREAM_PRO_ULTRA),
             Map.entry("STREAM AC Pro", THING_TYPE_STREAM_PRO_ULTRA),
             Map.entry("STREAM Ultra", THING_TYPE_STREAM_PRO_ULTRA),
             Map.entry("STREAM Ultra X", THING_TYPE_STREAM_PRO_ULTRA));

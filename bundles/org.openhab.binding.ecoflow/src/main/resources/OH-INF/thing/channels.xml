@@ -259,6 +259,53 @@
 		</channels>
 	</channel-group-type>
 
+	<channel-group-type id="stream-microinverter-status">
+		<label>Status</label>
+		<channels>
+			<channel id="temperature" typeId="stream-microinverter-temperature"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="stream-microinverter-grid">
+		<label>Grid</label>
+		<channels>
+			<channel id="voltage" typeId="ac-input-voltage"/>
+			<channel id="frequency" typeId="ac-input-frequency"/>
+			<channel id="current" typeId="ac-output-current"/>
+			<channel id="power" typeId="ac-output-power"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="stream-microinverter-pv1-input">
+		<label>PV Input 1</label>
+		<channels>
+			<channel id="voltage" typeId="solar-voltage">
+				<label>PV Input 1 Voltage</label>
+			</channel>
+			<channel id="current" typeId="solar-current">
+				<label>PV Input 1 Current</label>
+			</channel>
+			<channel id="power" typeId="solar-power">
+				<label>PV Input 1 Power</label>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="stream-microinverter-pv2-input">
+		<label>PV Input 2</label>
+		<channels>
+			<channel id="voltage" typeId="solar-voltage">
+				<label>PV Input 2 Voltage</label>
+			</channel>
+			<channel id="current" typeId="solar-current">
+				<label>PV Input 2 Current</label>
+			</channel>
+			<channel id="power" typeId="solar-power">
+				<label>PV Input 2 Power</label>
+			</channel>
+		</channels>
+	</channel-group-type>
+
 	<channel-group-type id="stream-ac-output-1ac">
 		<label>AC Output</label>
 		<channels>
@@ -648,4 +695,11 @@
 			</options>
 		</state>
 	</channel-type>
+
+	<channel-type id="stream-microinverter-temperature">
+		<item-type>Number:Temperature</item-type>
+		<label>Temperature</label>
+		<state pattern="%d %unit%" readOnly="true"/>
+	</channel-type>
+
 </thing:thing-descriptions>

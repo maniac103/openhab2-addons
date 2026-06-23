@@ -33,6 +33,8 @@ public class EcoflowBindingConstants {
     public static final ThingTypeUID THING_TYPE_STREAM_AC = new ThingTypeUID(BINDING_ID, "stream-ac");
     public static final ThingTypeUID THING_TYPE_STREAM_MAX = new ThingTypeUID(BINDING_ID, "stream-max");
     public static final ThingTypeUID THING_TYPE_STREAM_PRO_ULTRA = new ThingTypeUID(BINDING_ID, "stream-pro");
+    public static final ThingTypeUID THING_TYPE_STREAM_MICROINVERTER = new ThingTypeUID(BINDING_ID,
+            "stream-microinverter");
 
     public class DeltaChannels {
         public static final String CHANNEL_ID_BATTERY_SOC = "status#battery-level";
@@ -122,6 +124,20 @@ public class EcoflowBindingConstants {
     }
 
     // Stream channels
+    public class StreamMicroInverterChannels {
+        public static final String CHANNEL_ID_TEMPERATURE = "status#temperature";
+        public static final String CHANNEL_ID_GRID_CURRENT = "grid#current";
+        public static final String CHANNEL_ID_GRID_VOLTAGE = "grid#voltage";
+        public static final String CHANNEL_ID_GRID_POWER = "grid#power";
+        public static final String CHANNEL_ID_GRID_FREQUENCY = "grid#frequency";
+        public static final String CHANNEL_ID_PV_IN_POWER = "pv-input#power";
+        public static final String CHANNEL_ID_PV_IN_VOLTAGE = "pv-input#voltage";
+        public static final String CHANNEL_ID_PV_IN_CURRENT = "pv-input#current";
+        public static final String CHANNEL_ID_PV_IN2_POWER = "pv-input2#power";
+        public static final String CHANNEL_ID_PV_IN2_VOLTAGE = "pv-input2#voltage";
+        public static final String CHANNEL_ID_PV_IN2_CURRENT = "pv-input2#current";
+    }
+
     public class StreamChannels {
         public static final String CHANNEL_ID_LOAD_POWER = "status#load-power";
         public static final String CHANNEL_ID_OPERATING_MODE = "status#operating-mode";

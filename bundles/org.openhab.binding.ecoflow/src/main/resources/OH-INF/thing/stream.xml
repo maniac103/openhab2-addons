@@ -4,6 +4,26 @@
 	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
+	<thing-type id="stream-microinverter">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="ecoflow-api"/>
+		</supported-bridge-type-refs>
+
+		<label>EcoFlow STREAM Micro Inverter</label>
+		<description>Represents an EcoFlow STREAM micro inverter</description>
+
+		<channel-groups>
+			<channel-group id="status" typeId="stream-microinverter-status"/>
+			<channel-group id="grid" typeId="stream-microinverter-grid"/>
+			<channel-group id="pv-input" typeId="stream-microinverter-pv1-input"/>
+			<channel-group id="pv-input2" typeId="stream-microinverter-pv2-input"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description-ref uri="thing-type:ecoflow:device"/>
+	</thing-type>
+
 	<thing-type id="stream-ac">
 		<supported-bridge-type-refs>
 			<bridge-type-ref id="ecoflow-api"/>
