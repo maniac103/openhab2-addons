@@ -33,19 +33,24 @@ import com.google.gson.JsonObject;
 public class StreamMicroInverterHandler extends AbstractEcoflowHandler {
     private static final List<ChannelMapping> MAPPINGS = List.of(
             new ChannelMapping("", "gridConnectionPower", CHANNEL_ID_GRID_POWER, 1, Units.WATT),
-            new ChannelMapping("", "gridConnectionVol", CHANNEL_ID_GRID_VOLTAGE, 0.001, Units.VOLT),
-            new ChannelMapping("", "gridConnectionAmp", CHANNEL_ID_GRID_CURRENT, 0.001, Units.AMPERE),
+            new ChannelMapping("", "gridConnectionVol", CHANNEL_ID_GRID_VOLTAGE, 1, Units.VOLT),
+            new ChannelMapping("", "gridConnectionAmp", CHANNEL_ID_GRID_CURRENT, 1, Units.AMPERE),
             new ChannelMapping("", "gridConnectionFreq", CHANNEL_ID_GRID_FREQUENCY, 1, Units.HERTZ),
 
-            new ChannelMapping("", "plugInInfoPvVol", CHANNEL_ID_PV_IN_VOLTAGE, 0.001, Units.VOLT),
-            new ChannelMapping("", "plugInInfoPvAmp", CHANNEL_ID_PV_IN_CURRENT, 0.001, Units.AMPERE),
+            new ChannelMapping("", "plugInInfoPvVol", CHANNEL_ID_PV_IN_VOLTAGE, 1, Units.VOLT),
+            new ChannelMapping("", "plugInInfoPvAmp", CHANNEL_ID_PV_IN_CURRENT, 1, Units.AMPERE),
             new ChannelMapping("", "powGetPv", CHANNEL_ID_PV_IN_POWER, 1, Units.WATT),
 
-            new ChannelMapping("", "plugInInfoPv2Vol", CHANNEL_ID_PV_IN2_VOLTAGE, 0.001, Units.VOLT),
-            new ChannelMapping("", "plugInInfoPv2Amp", CHANNEL_ID_PV_IN2_CURRENT, 0.001, Units.AMPERE),
+            new ChannelMapping("", "plugInInfoPv2Vol", CHANNEL_ID_PV_IN2_VOLTAGE, 1, Units.VOLT),
+            new ChannelMapping("", "plugInInfoPv2Amp", CHANNEL_ID_PV_IN2_CURRENT, 1, Units.AMPERE),
             new ChannelMapping("", "powGetPv2", CHANNEL_ID_PV_IN2_POWER, 1, Units.WATT),
 
             new ChannelMapping("", "invNtcTemp3", CHANNEL_ID_TEMPERATURE, 1, SIUnits.CELSIUS));
+    // TODO: "moduleWifiRssi":-44.0,
+    // TODO: "feedGridModePowMax":800
+    // TODO: "gridConnectionSta":"PANEL_FEED_GRID",
+    // TODO: "invTargetPwr":0.0,
+    // TODO: "feedGridModePowLimit":800
 
     public StreamMicroInverterHandler(Thing thing) {
         super(thing, MAPPINGS);
