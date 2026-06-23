@@ -47,7 +47,7 @@ public class EcoflowHandlerFactory extends BaseThingHandlerFactory {
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_API, THING_TYPE_DELTA2,
             THING_TYPE_DELTA2MAX, THING_TYPE_POWERSTREAM, THING_TYPE_STREAM_AC, THING_TYPE_STREAM_MAX,
-            THING_TYPE_STREAM_PRO_ULTRA);
+            THING_TYPE_STREAM_PRO_ULTRA, THING_TYPE_STREAM_MICROINVERTER);
 
     @Activate
     public EcoflowHandlerFactory(final @Reference HttpClientFactory httpClientFactory) {
