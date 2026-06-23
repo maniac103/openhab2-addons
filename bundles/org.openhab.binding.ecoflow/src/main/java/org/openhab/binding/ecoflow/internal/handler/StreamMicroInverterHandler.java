@@ -22,6 +22,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.Thing;
+import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.types.Command;
 
 import com.google.gson.JsonObject;
@@ -63,6 +64,11 @@ public class StreamMicroInverterHandler extends AbstractEcoflowHandler {
 
     @Override
     protected JsonObject extractParamsFromQuotaMessage(JsonObject payload) {
+        // 'Get all quota' returns no data for this device, so use presence of quota messages for online state
+        if (getThing().getStatus() != ThingStatus.ONLINE) {
+            updateStatus(ThingStatus.ONLINE);
+        }
+
         return payload;
     }
 

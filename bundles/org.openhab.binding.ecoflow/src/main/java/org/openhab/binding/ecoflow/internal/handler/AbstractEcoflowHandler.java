@@ -193,8 +193,10 @@ abstract class AbstractEcoflowHandler extends BaseThingHandler {
             JsonObject data = api.getDeviceData(serialNumber);
             logger.trace("{}: Update channel states from JSON data {}", serialNumber, data);
 
-            updateStatesFromJson(data, mappingsByListId);
-            updateStatus(ThingStatus.ONLINE);
+            if (data != null) {
+                updateStatesFromJson(data, mappingsByListId);
+                updateStatus(ThingStatus.ONLINE);
+            }
         } else {
             for (Channel channel : getThing().getChannels()) {
                 updateState(channel.getUID(), UnDefType.NULL);
