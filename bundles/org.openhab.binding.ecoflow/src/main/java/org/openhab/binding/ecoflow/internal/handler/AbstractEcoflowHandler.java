@@ -210,15 +210,20 @@ abstract class AbstractEcoflowHandler extends BaseThingHandler {
         }
     }
 
-    private @Nullable EcoflowApi getApiFromHandler() {
+    protected @Nullable EcoflowApiHandler getBridgeHandler() {
         final Bridge bridge = getBridge();
         if (bridge == null || bridge.getStatus() != ThingStatus.ONLINE) {
             return null;
         }
         if (bridge.getHandler() instanceof EcoflowApiHandler handler) {
-            return handler.getApi();
+            return handler;
         }
         throw new IllegalStateException("AbstractEcoflowHandler must be a child handler of EcoflowApiHandler");
+    }
+
+    private @Nullable EcoflowApi getApiFromHandler() {
+        final EcoflowApiHandler handler = getBridgeHandler();
+        return handler != null ? handler.getApi() : null;
     }
 
     protected static interface ValueConverter {

@@ -101,6 +101,21 @@ public class EcoflowApiHandler extends BaseBridgeHandler {
         this.discoveryService = discoveryService;
     }
 
+    public void sendTelemetryMessage(String serialNumber, JsonObject payload) throws EcoflowApiException {
+        final MqttConnection connection;
+        synchronized (mqttConnectionLock) {
+            connection = mqttConnection;
+        }
+        if (connection == null) {
+            throw new EcoflowApiException("MQTT connection not established");
+        }
+        try {
+            connection.sendTelemetryMessage(serialNumber, payload);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new EcoflowApiException(e);
+        }
+    }
+
     @Override
     public void initialize() {
         logger.debug("Initializing Ecoflow account '{}'", getThing().getUID().getId());
@@ -377,6 +392,13 @@ public class EcoflowApiHandler extends BaseBridgeHandler {
             var statusSubFuture = client.subscribeWith().topicFilter(deviceTopicBase + "status").callback(statusHandler)
                     .send();
             return CompletableFuture.allOf(quotaSubFuture, statusSubFuture);
+        }
+
+        void sendTelemetryMessage(String serialNumber, JsonObject payload)
+                throws ExecutionException, InterruptedException {
+            String topic = String.format("/app/device/telemetry/%s_set", serialNumber);
+            Mqtt3Publish publish = Mqtt3Publish.builder().topic(topic).payload(payload.toString().getBytes()).build();
+            client.publish(publish);
         }
 
         CompletableFuture<Void> disconnect() {

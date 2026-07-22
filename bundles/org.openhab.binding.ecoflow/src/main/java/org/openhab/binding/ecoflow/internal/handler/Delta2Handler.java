@@ -19,6 +19,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.ecoflow.internal.api.EcoflowApiException;
+import org.openhab.binding.ecoflow.internal.util.SchedulerTask;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.PercentType;
@@ -38,6 +40,8 @@ import com.google.gson.JsonObject;
 @NonNullByDefault
 public class Delta2Handler extends AbstractEcoflowHandler {
     private int nextControlId = 1;
+    private int nextHeartbeatRequestId = 1;
+    private final SchedulerTask heartbeatTask;
 
     private static final ValueConverter PERCENT_DECIMAL_CONVERTER = value -> new DecimalType(value.getAsNumber());
     private static final ValueConverter PERCENT_DIMMER_CONVERTER = value -> new PercentType(value.getAsInt());
@@ -129,6 +133,13 @@ public class Delta2Handler extends AbstractEcoflowHandler {
 
     public Delta2Handler(Thing thing, boolean isDelta2Max) {
         super(thing, isDelta2Max ? Stream.concat(MAPPINGS.stream(), MAX_ONLY_MAPPINGS.stream()).toList() : MAPPINGS);
+        heartbeatTask = new SchedulerTask(scheduler, logger, "Heartbeat", this::sendHeartbeat);
+    }
+
+    @Override
+    public void handleMqttConnected() {
+        super.handleMqttConnected();
+        heartbeatTask.scheduleRecurring(30);
     }
 
     @Override
@@ -203,5 +214,26 @@ public class Delta2Handler extends AbstractEcoflowHandler {
         result.addProperty("id", nextControlId++);
         result.addProperty("version", "1.0");
         return result;
+    }
+
+    private void sendHeartbeat() {
+        final EcoflowApiHandler handler = getBridgeHandler();
+        if (handler == null) {
+            return;
+        }
+        JsonObject params = new JsonObject();
+        params.addProperty("latestQuotas", true);
+
+        JsonObject payload = new JsonObject();
+        payload.addProperty("id", nextHeartbeatRequestId++);
+        payload.addProperty("version", "1.0");
+        payload.addProperty("cmdCode", "WN_REQUEST");
+        payload.add("params", params);
+
+        try {
+            handler.sendTelemetryMessage(serialNumber, payload);
+        } catch (EcoflowApiException e) {
+            logger.debug("{}: Failed to send heartbeat message", serialNumber, e);
+        }
     }
 }
